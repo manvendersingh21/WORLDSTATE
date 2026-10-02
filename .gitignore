@@ -22,3 +22,4 @@ yolov8n.pt
 web/vast/videos/
 web/vast/manifest.json
 data/worldstate_vss_export.zip
+!docs/demo/worldstate-voiceover.mp4
