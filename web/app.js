@@ -130,6 +130,7 @@ function renderAnalysis() {
     facts.append(wrap);
   }
   $("why").textContent = analysis.why;
+  loadNarration(analysis.episode_id);
   $("expected-path").textContent = analysis.expected_path.map((step) => step.name).join(" → ");
   $("recovery-path").textContent = analysis.recovery_path.map((step) => step.name).join(" → ");
   $("video-stub").textContent = analysis.video_generation?.note || "";
@@ -353,3 +354,28 @@ $("file-input").addEventListener("change", async (event) => {
 boot().catch((error) => {
   $("why").textContent = error.message;
 });
+
+async function loadNarration(episodeId) {
+  const text = $("narration");
+  const badge = $("narration-source");
+  text.textContent = "Asking the event model…";
+  badge.textContent = "";
+  badge.className = "source";
+  try {
+    const res = await fetch(`/api/episodes/${encodeURIComponent(episodeId)}/narration`);
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    if (state.current && state.current !== episodeId) return;
+    text.textContent = data.narrative;
+    if (data.source === "cosmos-reason") {
+      badge.textContent = `from Cosmos Reason · ${data.model}`;
+      badge.classList.add("cosmos");
+    } else {
+      badge.textContent = "kinematic fallback";
+      badge.title = data.reason || "";
+    }
+  } catch (error) {
+    text.textContent = "";
+    badge.textContent = "unavailable";
+  }
+}

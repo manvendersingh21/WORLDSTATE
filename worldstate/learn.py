@@ -10,26 +10,36 @@ import numpy as np
 from sklearn.metrics import roc_auc_score
 
 from worldstate.adapters import CosmosReasonAdapter, credential_report
-from worldstate.config import PERCEPTION_VERSION, TRACKS_DIR
-from worldstate.dataset import real_episodes, real_manifest_path, synthetic_episodes
+from worldstate.config import TRACKS_DIR
+from worldstate.dataset import (
+    process_episodes,
+    process_manifest_path,
+    real_episodes,
+    real_manifest_path,
+    synthetic_episodes,
+)
 from worldstate.engine import WorldModel, apply_cosmos_events, apply_cosmos_names
 from worldstate.memory import MemoryStore
-from worldstate.perception import perceive
+from worldstate.perception import perception_mode, tracks_for
 from worldstate.series import series_from_tracks, series_from_video_flow
 from worldstate.synthetic import ensure_dataset
 
 
-def _tracks(episode: dict) -> dict:
-    path = TRACKS_DIR / f"{episode['id']}.json"
-    video = Path(episode["video"])
-    if path.exists() and video.exists() and path.stat().st_mtime >= video.stat().st_mtime:
-        cached = json.loads(path.read_text())
-        if cached.get("perception_version") == PERCEPTION_VERSION:
-            return cached
-    tracks = perceive(video)
-    tracks["episode_id"] = episode["id"]
-    path.write_text(json.dumps(tracks))
-    return tracks
+def _tracks(episode: dict, mode: str) -> dict:
+    return tracks_for(Path(episode["video"]), episode["id"], mode)
+
+
+def _fit_tracked(episodes: list[dict], mode: str) -> tuple[WorldModel, dict[str, dict], str]:
+    series_of = {}
+    used = set()
+    for ep in episodes:
+        tracks = _tracks(ep, mode)
+        used.add(tracks.get("perception", mode))
+        series_of[ep["id"]] = series_from_tracks(tracks)
+        print(ep["id"], tracks.get("perception"), "track quality", round(tracks["quality"], 3))
+    model = WorldModel()
+    model.fit(episodes, series_of, "kinematic")
+    return model, series_of, "+".join(sorted(used))
 
 
 def _flow(episode: dict) -> dict:
@@ -152,15 +162,30 @@ def _maybe_cosmos(model: WorldModel, episodes: list[dict], series_of: dict[str, 
 
 
 def learn_model() -> WorldModel:
-    mode = os.environ.get("WORLDSTATE_DATASET", "auto")
+    """WORLDSTATE_DATASET: process (default when present), synthetic, or real (Exylos-style clips)."""
+    mode = os.environ.get("WORLDSTATE_DATASET", "auto").strip() or "auto"
     cosmos = CosmosReasonAdapter()
     fallback = None
     chosen = None
     series_of: dict[str, dict] = {}
     episodes: list[dict] = []
     perception = "classical-color"
+    tracking = "auto"
 
-    if mode in {"auto", "real"} and real_manifest_path() is not None:
+    if mode in {"auto", "process"} and process_manifest_path() is not None:
+        path = process_manifest_path()
+        print("learning repeated process from", path)
+        episodes = process_episodes(path)
+        tracking = perception_mode(episodes[0]["dataset"])
+        chosen, series_of, perception = _fit_tracked(episodes, tracking)
+        chosen.payload["dataset"] = episodes[0]["dataset"]
+    elif mode == "process":
+        fallback = {
+            "used_synthetic": True,
+            "reason": "WORLDSTATE_DATASET=process but no data/process/manifest.json or WORLDSTATE_REAL_MANIFEST was found.",
+        }
+
+    if chosen is None and mode in {"auto", "real"} and real_manifest_path() is not None and real_episodes():
         print("assessing real front-camera clips")
         episodes = real_episodes()
         series_of = {ep["id"]: _flow(ep) for ep in episodes}
@@ -202,19 +227,14 @@ def learn_model() -> WorldModel:
         print("learning synthetic cell")
         ensure_dataset()
         episodes = synthetic_episodes()
-        series_of = {}
-        for ep in episodes:
-            tracks = _tracks(ep)
-            series_of[ep["id"]] = series_from_tracks(tracks)
-            print(ep["id"], "track quality", round(tracks["quality"], 3))
-        chosen = WorldModel()
-        chosen.fit(episodes, series_of, "kinematic")
+        tracking = perception_mode("synthetic")
+        chosen, series_of, perception = _fit_tracked(episodes, tracking)
         chosen.payload["dataset"] = "synthetic"
-        perception = "classical-color"
 
     _maybe_cosmos(chosen, episodes, series_of, cosmos)
     _attach_runtime(chosen, cosmos, perception)
     chosen.payload["fallback"] = fallback
+    chosen.payload["perception_mode"] = tracking
     for node in chosen.payload["nodes"]:
         print(f"state {node['id']} {node['name']} t={node['mean_t']:.2f} n={node['count']}")
     for edge in chosen.payload["edges"]:

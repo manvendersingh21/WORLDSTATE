@@ -1,4 +1,4 @@
-"""Load the synthetic cell or a folder of real mp4s, including the Exylos front-camera pack."""
+"""Load the repeated-process dataset, the synthetic cell, or a manifest of real mp4s."""
 
 from __future__ import annotations
 
@@ -6,11 +6,38 @@ import json
 import os
 from pathlib import Path
 
-from worldstate.config import MANIFEST_PATH, VIDEO_DIR
+from worldstate.config import MANIFEST_PATH, PROCESS_MANIFEST, VIDEO_DIR
 
-DEFAULT_REAL_MANIFEST = Path(
-    "/cursor/stores/bc-01a0fcc2-e2d9-74ce-8e08-fea622ea1f27/internal/datasets/manifest.json"
-)
+
+def process_manifest_path() -> Path | None:
+    """A repeated-process manifest: WORLDSTATE_REAL_MANIFEST in the episodes schema, else data/process."""
+    real = real_manifest_path()
+    if real is not None and "episodes" in json.loads(real.read_text()):
+        return real
+    return PROCESS_MANIFEST if PROCESS_MANIFEST.exists() else None
+
+
+def process_episodes(path: Path | None = None) -> list[dict]:
+    """One fixed camera, same pick-and-place every run (robosuite Lift by default)."""
+    path = path or process_manifest_path()
+    manifest = json.loads(path.read_text())
+    videos = path.parent / "videos" if (path.parent / "videos").is_dir() else path.parent
+    episodes = []
+    for ep in manifest["episodes"]:
+        episodes.append(
+            {
+                "id": ep["id"],
+                "role": ep["role"],
+                "split": ep["split"],
+                "kind": ep["kind"],
+                "file": ep["file"],
+                "video": str(videos / ep["file"]),
+                "listed": ep["role"] != "similar_hidden",
+                "dataset": manifest.get("generator", "process"),
+                "failure_type": "displacement" if ep["kind"].startswith("miss") else "none",
+            }
+        )
+    return episodes
 
 
 def synthetic_episodes() -> list[dict]:
@@ -35,7 +62,9 @@ def synthetic_episodes() -> list[dict]:
 
 def real_manifest_path() -> Path | None:
     raw = os.environ.get("WORLDSTATE_REAL_MANIFEST", "").strip()
-    path = Path(raw) if raw else DEFAULT_REAL_MANIFEST
+    if not raw:
+        return None
+    path = Path(raw)
     return path if path.exists() else None
 
 
@@ -44,6 +73,8 @@ def real_episodes(manifest_path: Path | None = None) -> list[dict]:
     if path is None:
         return []
     manifest = json.loads(path.read_text())
+    if "clips" not in manifest:
+        return []
     root = path.parent
     successes = [clip for clip in manifest["clips"] if clip["label"] == "success"]
     failures = [clip for clip in manifest["clips"] if clip["label"] == "failure"]

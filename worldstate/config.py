@@ -14,12 +14,15 @@ UPLOAD_DIR = DATA / "uploads"
 WEB_DIR = ROOT / "web"
 
 MANIFEST_PATH = VIDEO_DIR / "manifest.json"
+PROCESS_DIR = DATA / "process"
+PROCESS_MANIFEST = PROCESS_DIR / "manifest.json"
+YOLO_WEIGHTS = ROOT / "models" / "worldstate-yolo.pt"
 MODEL_PATH = MODEL_DIR / "world_model.json"
 MEMORY_DB = MODEL_DIR / "memory.db"
 VECTOR_PATH = MODEL_DIR / "text_vectors.npz"
 
 GENERATOR_VERSION = 1
-PERCEPTION_VERSION = 1
+PERCEPTION_VERSION = 2
 
 FPS = 15
 WIDTH = 960

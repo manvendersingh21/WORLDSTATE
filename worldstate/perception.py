@@ -7,13 +7,14 @@ Both return the same trajectory schema.
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
 import cv2
 import numpy as np
 
-from worldstate.config import PERCEPTION_VERSION
+from worldstate.config import PERCEPTION_VERSION, TRACKS_DIR, YOLO_WEIGHTS
 
 COLOR_RANGES = {
     "gripper": [
@@ -315,7 +316,8 @@ def _map_yolo_label(name: str) -> str:
 def yolo_track(path: Path) -> dict:
     from ultralytics import YOLO
 
-    weights = os.environ.get("WORLDSTATE_YOLO_WEIGHTS", "yolov8n.pt")
+    default = str(YOLO_WEIGHTS) if YOLO_WEIGHTS.exists() else "yolov8n.pt"
+    weights = os.environ.get("WORLDSTATE_YOLO_WEIGHTS", "").strip() or default
     world = os.environ.get("WORLDSTATE_YOLO_WORLD", "0") == "1"
     model = YOLO(weights)
     if world and hasattr(model, "set_classes"):
@@ -367,14 +369,25 @@ def yolo_track(path: Path) -> dict:
         "duration": frames[-1]["time"] if frames else 0.0,
         "perception": "yolo",
         "perception_version": PERCEPTION_VERSION,
+        "weights": Path(weights).name,
         "quality": _quality(frames, ("part",)),
         "frames": frames,
     }
 
 
-def perceive(path: Path) -> dict:
+def perception_mode(dataset: str | None = None) -> str:
+    """WORLDSTATE_PERCEPTION wins. The repeated process defaults to YOLO when it can run."""
+    mode = os.environ.get("WORLDSTATE_PERCEPTION", "").strip()
+    if mode:
+        return mode
+    if dataset not in (None, "synthetic") and yolo_available() and YOLO_WEIGHTS.exists():
+        return "yolo"
+    return "auto"
+
+
+def perceive(path: Path, mode: str | None = None) -> dict:
     """Track actors. Auto mode keeps color tracks when they lock, else motion or YOLO."""
-    mode = os.environ.get("WORLDSTATE_PERCEPTION", "auto")
+    mode = mode or os.environ.get("WORLDSTATE_PERCEPTION", "auto")
     if mode == "yolo":
         return yolo_track(path)
     if mode == "motion":
@@ -391,3 +404,23 @@ def perceive(path: Path) -> dict:
             pass
     motion = classical_motion_track(path)
     return motion if motion["quality"] > color["quality"] else color
+
+
+def tracks_for(video: Path, episode_id: str, mode: str | None = None) -> dict:
+    """Cached tracks, recomputed when the video, perception mode, or version changes."""
+    mode = mode or os.environ.get("WORLDSTATE_PERCEPTION", "auto")
+    path = TRACKS_DIR / f"{episode_id}.json"
+    if path.exists() and video.exists() and path.stat().st_mtime >= video.stat().st_mtime:
+        cached = json.loads(path.read_text())
+        if (
+            cached.get("perception_version") == PERCEPTION_VERSION
+            and cached.get("source_video") == str(video)
+            and cached.get("requested_mode") == mode
+        ):
+            return cached
+    tracks = perceive(video, mode)
+    tracks["episode_id"] = episode_id
+    tracks["source_video"] = str(video)
+    tracks["requested_mode"] = mode
+    path.write_text(json.dumps(tracks))
+    return tracks

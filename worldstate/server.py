@@ -13,11 +13,12 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from worldstate.config import TRACKS_DIR, UPLOAD_DIR, WEB_DIR
+from worldstate.adapters import CosmosReasonAdapter
+from worldstate.config import MODEL_DIR, TRACKS_DIR, UPLOAD_DIR, WEB_DIR
 from worldstate.engine import WorldModel
 from worldstate.learn import learn_model
 from worldstate.memory import MemoryStore
-from worldstate.perception import perceive
+from worldstate.perception import perceive, tracks_for
 from worldstate.series import series_from_tracks, series_from_video_flow
 
 app = FastAPI(title="WORLDSTATE")
@@ -59,14 +60,7 @@ def _series(ep: dict):
             series["feature_kind"] = np.array(["flow"])
             return series
         return series_from_video_flow(Path(ep["video"]))
-    path = TRACKS_DIR / f"{ep['id']}.json"
-    if not path.exists():
-        tracks = perceive(Path(ep["video"]))
-        tracks["episode_id"] = ep["id"]
-        path.write_text(json.dumps(tracks))
-    else:
-        tracks = json.loads(path.read_text())
-    return series_from_tracks(tracks)
+    return series_from_tracks(tracks_for(Path(ep["video"]), ep["id"], _model.payload.get("perception_mode")))
 
 
 def _analyze(episode_id: str) -> dict:
@@ -78,6 +72,61 @@ def _analyze(episode_id: str) -> dict:
     detail["analogous"] = _model.analogous([step["state"] for step in detail["sequence"]])
     _cache[key] = detail
     return detail
+
+
+_narrations: dict[tuple, dict] = {}
+_narrate_lock = threading.Lock()
+
+
+@app.get("/api/episodes/{episode_id}/narration")
+def narration(episode_id: str):
+    """Event text for one run: Cosmos Reason when it answers, else the kinematic events.
+
+    Cluster identity and the novelty verdict stay with the graph; Cosmos only writes text.
+    """
+    if not _model.ready:
+        raise HTTPException(400, "learn a process first")
+    detail = _analyze(episode_id)
+    key = (episode_id, _model.version)
+    cache_dir = MODEL_DIR / "narrations"
+    cache_dir.mkdir(exist_ok=True)
+    cache_path = cache_dir / f"{episode_id}.v{_model.version}.json"
+    with _narrate_lock:
+        if key in _narrations:
+            return _narrations[key]
+        if cache_path.exists():
+            _narrations[key] = json.loads(cache_path.read_text())
+            return _narrations[key]
+        ep = _episode(episode_id)
+        cosmos = CosmosReasonAdapter()
+        video_path = Path(ep["video"])
+        narrative = cosmos.narrate_run(video_path, detail) if cosmos.available else None
+        events = None
+        if narrative:
+            summary = " ".join(ev["action"] for ev in detail["events"])
+            events = cosmos.refine_events(video_path, detail["events"], summary)
+        kinematic = " ".join(f"At {ev['time']:.2f}s {ev['action']}." for ev in detail["events"])
+        if narrative:
+            result = {
+                "source": "cosmos-reason",
+                "model": cosmos.model,
+                "narrative": narrative,
+                "events": events or detail["events"],
+                "events_source": "cosmos-reason" if events else "kinematic",
+            }
+        else:
+            result = {
+                "source": "kinematic",
+                "model": None,
+                "narrative": kinematic,
+                "events": detail["events"],
+                "events_source": "kinematic",
+                "reason": cosmos.last_status.get("skipped_reason") or cosmos.last_status.get("last_error"),
+            }
+        _narrations[key] = result
+        if result["source"] == "cosmos-reason":
+            cache_path.write_text(json.dumps(result))
+        return result
 
 
 @app.get("/")
@@ -193,7 +242,7 @@ def similar_file():
 
 
 def _ingest(path: Path, episode_id: str) -> dict:
-    tracks = perceive(path)
+    tracks = perceive(path, _model.payload.get("perception_mode"))
     tracks["episode_id"] = episode_id
     (TRACKS_DIR / f"{episode_id}.json").write_text(json.dumps(tracks))
     episode = {

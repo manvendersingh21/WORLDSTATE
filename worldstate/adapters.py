@@ -186,6 +186,9 @@ def resolve_nvidia() -> dict:
     }
 
 
+COSMOS_FALLBACK_MODELS = ["nvidia/cosmos-reason2-8b"]
+
+
 class CosmosReasonAdapter:
     """Cosmos Reason as the event extractor and cluster namer.
 
@@ -201,6 +204,9 @@ class CosmosReasonAdapter:
         self.model = cfg["model"]
         self.custom_base = cfg["custom_base"]
         self.key_source = cfg["key_source"]
+        # Only used when the model was not pinned by NVIDIA_COSMOS_MODEL / COSMOS_MODEL.
+        pinned = bool(os.environ.get("NVIDIA_COSMOS_MODEL", "").strip() or os.environ.get("COSMOS_MODEL", "").strip())
+        self._fallbacks = [] if pinned or self.custom_base else [m for m in COSMOS_FALLBACK_MODELS if m != self.model]
         self.last_status: dict = {
             "attempted": 0,
             "succeeded": 0,
@@ -242,6 +248,35 @@ class CosmosReasonAdapter:
             item["source"] = "cosmos-reason"
             merged.append(item)
         return merged
+
+    def narrate_run(self, video_path: Path, analysis: dict) -> str | None:
+        """Plain-language account of one run. The graph already decided normal vs novel."""
+        if not self.available:
+            return None
+        facts = {
+            "status": analysis.get("status"),
+            "first_divergence_s": analysis.get("first_divergence_s"),
+            "expected_transition": analysis.get("expected"),
+            "observed_transition": analysis.get("observed"),
+            "support": (analysis.get("support") or {}).get("text"),
+            "learned_path": [step["name"] for step in analysis.get("expected_path", [])],
+        }
+        prompt = (
+            "Answer the question using the following format: <think>your reasoning</think>\n"
+            "Then write 2-3 plain sentences, no JSON.\n"
+            "Watch this robot pick-and-place video. A world model learned the process graph from "
+            "unlabeled reference runs and produced the facts below; do not change its verdict. "
+            "Describe what physically happens in this run, and if it diverges, what the gripper and "
+            "the object do at the divergence time.\n"
+            f"Facts: {json.dumps(facts)}"
+        )
+        text = self._complete(prompt, video_path=video_path)
+        if not text:
+            return None
+        if "</think>" in text:
+            text = text.split("</think>", 1)[1]
+        text = text.strip()
+        return text[:900] or None
 
     def name_clusters(self, video_path: Path, clusters: list[dict]) -> dict[str, str] | None:
         """Name discovered clusters after they exist. Returns {id: short name}."""
@@ -310,12 +345,24 @@ class CosmosReasonAdapter:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=45) as response:
+            with urllib.request.urlopen(request, timeout=90) as response:
                 payload = json.loads(response.read().decode())
             text = payload["choices"][0]["message"]["content"]
             self.last_status["succeeded"] += 1
             self.last_status["last_error"] = None
+            self.last_status["model"] = self.model
             return text
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode(errors="replace")[:300]
+            if exc.code == 404 and self._fallbacks:
+                # The configured name is not served here; try the next catalogued Cosmos Reason model.
+                self.model = self._fallbacks.pop(0)
+                self.last_status["attempted"] -= 1
+                return self._complete(prompt, video_path)
+            self.last_status["failed"] += 1
+            message = _redact(f"HTTP {exc.code} from {self.model}: {detail}", self.api_key)
+            self.last_status["last_error"] = message[:300]
+            return None
         except Exception as exc:
             self.last_status["failed"] += 1
             message = _redact(str(exc), self.api_key)
