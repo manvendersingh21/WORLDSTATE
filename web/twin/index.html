@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WORLDSTATE — 3D Digital Twin (standalone demo)</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #080a0d;
+    color: #c9d1d9;
+    font-family: Inter, -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 24px 40px;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    width: 100%;
+    max-width: 1180px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #e6edf3;
+    text-transform: uppercase;
+  }
+  header span {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: #5f6b76;
+  }
+  #twin-container {
+    width: 100%;
+    max-width: 1180px;
+    aspect-ratio: 16 / 9;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #080a0d;
+  }
+  .demo-controls {
+    width: 100%;
+    max-width: 1180px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .demo-controls select,
+  .demo-controls button {
+    appearance: none;
+    background: rgba(16, 20, 25, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #c9d1d9;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 7px 12px;
+    cursor: pointer;
+  }
+  .demo-controls select:hover,
+  .demo-controls button:hover { border-color: rgba(255, 255, 255, 0.25); }
+  #twin-play { min-width: 76px; }
+  #twin-scrub {
+    flex: 1;
+    accent-color: #37c3d6;
+    cursor: pointer;
+  }
+  #twin-time {
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: #8b95a0;
+    min-width: 88px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>3D Digital Twin</h1>
+    <span>WORLDSTATE — standalone module demo</span>
+  </header>
+
+  <div id="twin-container"></div>
+
+  <div class="demo-controls">
+    <select id="twin-run-select" aria-label="Run">
+      <option value="normal_16">normal_16</option>
+      <option value="miss_unseen">miss_unseen</option>
+    </select>
+    <button id="twin-play" type="button" data-playing="false">Play</button>
+    <input id="twin-scrub" type="range" min="0" max="8.95" step="0.05" value="0" aria-label="Scrub" />
+    <span id="twin-time">0.00 / 8.95 s</span>
+  </div>
+
+  <script type="module">
+    import { mountTwin } from './twin.js';
+
+    const container = document.getElementById('twin-container');
+    const twin = mountTwin(container, { assetsBase: './assets', dataBase: './data' });
+    window.__twin = twin;
+
+    const runSelect = document.getElementById('twin-run-select');
+    const playBtn = document.getElementById('twin-play');
+    const scrub = document.getElementById('twin-scrub');
+    const timeLabel = document.getElementById('twin-time');
+
+    async function loadRun(runId) {
+      twin.pause();
+      playBtn.dataset.playing = 'false';
+      playBtn.textContent = 'Play';
+      await twin.load(runId);
+      try {
+        const res = await fetch(`./dev/${runId}.analysis.json`);
+        if (res.ok) twin.setAnalysis(await res.json());
+        else twin.setAnalysis(null);
+      } catch {
+        twin.setAnalysis(null);
+      }
+      twin.setTime(0);
+      scrub.max = twin.getDuration().toFixed(2);
+      syncUI();
+    }
+
+    function syncUI() {
+      const t = twin.getTime();
+      scrub.value = String(t);
+      timeLabel.textContent = `${t.toFixed(2)} / ${twin.getDuration().toFixed(2)} s`;
+    }
+
+    runSelect.addEventListener('change', () => loadRun(runSelect.value));
+
+    playBtn.addEventListener('click', () => {
+      const playing = playBtn.dataset.playing === 'true';
+      if (playing) {
+        twin.pause();
+        playBtn.dataset.playing = 'false';
+        playBtn.textContent = 'Play';
+      } else {
+        twin.play();
+        playBtn.dataset.playing = 'true';
+        playBtn.textContent = 'Pause';
+      }
+    });
+
+    scrub.addEventListener('input', () => {
+      twin.setTime(parseFloat(scrub.value));
+      timeLabel.textContent = `${twin.getTime().toFixed(2)} / ${twin.getDuration().toFixed(2)} s`;
+    });
+
+    (function uiLoop() {
+      requestAnimationFrame(uiLoop);
+      if (playBtn.dataset.playing === 'true') syncUI();
+    })();
+
+    loadRun(runSelect.value);
+  </script>
+</body>
+</html>

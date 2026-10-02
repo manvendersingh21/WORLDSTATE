@@ -1,0 +1,174 @@
+/* WORLDSTATE — 3D Digital Twin module styles (scoped under .twin-root) */
+
+.twin-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #080a0d;
+  font-family: Inter, -apple-system, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  color: #c9d1d9;
+  border-radius: inherit;
+  -webkit-font-smoothing: antialiased;
+}
+
+.twin-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  outline: none;
+}
+
+.twin-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: block;
+}
+
+/* --- top-left: state + divergence ------------------------------------- */
+
+.twin-topleft {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.twin-state-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 10px;
+  background: rgba(10, 13, 17, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  backdrop-filter: blur(6px);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #e6edf3;
+}
+
+.twin-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #37c3d6;
+  box-shadow: 0 0 6px rgba(55, 195, 214, 0.6);
+  flex: none;
+}
+
+.twin-root[data-status="novel"] .twin-chip-dot,
+.twin-root[data-status="known"] .twin-chip-dot {
+  background: #c9a227;
+  box-shadow: 0 0 6px rgba(201, 162, 39, 0.6);
+}
+
+.twin-divergence {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  background: rgba(46, 12, 12, 0.78);
+  border: 1px solid rgba(255, 80, 80, 0.45);
+  border-radius: 6px;
+  backdrop-filter: blur(6px);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #ff6b6b;
+  text-transform: uppercase;
+}
+
+.twin-divergence::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ff5050;
+  box-shadow: 0 0 8px rgba(255, 80, 80, 0.8);
+  animation: twin-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes twin-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* --- top-right: view presets ------------------------------------------- */
+
+.twin-viewbar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.twin-btn {
+  appearance: none;
+  padding: 5px 10px;
+  background: rgba(10, 13, 17, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  backdrop-filter: blur(6px);
+  color: #9aa4af;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.twin-btn:hover {
+  color: #e6edf3;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.twin-btn-active {
+  color: #e6edf3;
+  background: rgba(55, 195, 214, 0.12);
+  border-color: rgba(55, 195, 214, 0.4);
+}
+
+.twin-btn-reset {
+  margin-left: 6px;
+}
+
+/* --- center: no-data note ------------------------------------------------ */
+
+.twin-no-data {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: #7d8790;
+  background: rgba(8, 10, 13, 0.55);
+  text-transform: lowercase;
+}
+
+/* --- bottom: provenance --------------------------------------------------- */
+
+.twin-provenance {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: rgba(148, 158, 168, 0.55);
+  text-align: left;
+  pointer-events: none;
+}
