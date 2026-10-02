@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>WORLDSTATE · Live Evidence</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="evidence.css" />
+</head>
+<body class="evidence-demo">
+  <h1>WORLDSTATE · Live Evidence</h1>
+  <p class="sub">Real YOLO detections, divergence analysis, and Cosmos Reason narration pulled live from the API.</p>
+
+  <div class="controls">
+    <label>Run
+      <select id="run">
+        <option value="normal_16">normal_16</option>
+        <option value="miss_unseen" selected>miss_unseen</option>
+      </select>
+    </label>
+    <input id="slider" type="range" min="0" max="8.9" step="0.05" value="0" />
+    <span class="time" id="timeLabel">t = 0.00 s</span>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>YOLO detections @ t</h2>
+      <div id="tags"></div>
+      <div class="kv"><span class="k">frame</span><span id="frameNo">–</span></div>
+      <div class="kv"><span class="k">gripper cx,cy</span><span id="gripperPos">–</span></div>
+      <div class="kv"><span class="k">part cx,cy</span><span id="partPos">–</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Analysis</h2>
+      <div class="kv"><span class="k">status</span><span id="status">–</span></div>
+      <div class="kv"><span class="k">first divergence</span><span id="divergence">–</span></div>
+      <div class="kv"><span class="k">expected → observed</span><span id="transition">–</span></div>
+      <div class="kv"><span class="k">support</span><span id="support">–</span></div>
+      <div class="kv"><span class="k">known class</span><span id="knownClass">–</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Cosmos narration <span class="badge" id="cosmosBadge">–</span></h2>
+      <div id="sentences"></div>
+    </div>
+
+    <div class="card">
+      <h2>Detection summary</h2>
+      <div id="summary"></div>
+    </div>
+  </div>
+
+  <p class="error" id="error" hidden></p>
+
+  <script type="module">
+    import { loadEvidence, formatTag } from "./evidence.js";
+
+    const $ = (id) => document.getElementById(id);
+    const runSel = $("run");
+    const slider = $("slider");
+    let evidence = null;
+
+    const DISPLAY = { gripper: "gripper", part: "cube", fixture: "fixture" };
+
+    function fmt(n, digits = 2) {
+      return typeof n === "number" ? n.toFixed(digits) : "–";
+    }
+
+    function renderStatic() {
+      const a = evidence.analysis;
+      $("status").textContent = a.status;
+      $("status").className = `status-${a.status}`;
+      $("divergence").textContent =
+        a.first_divergence_s == null ? "none" : `${fmt(a.first_divergence_s)} s`;
+      const exp = a.expected || {};
+      const obs = a.observed || {};
+      $("transition").textContent =
+        `${exp.from ?? "?"} → ${exp.to ?? "?"}  |  observed: ${obs.from ?? "?"} → ${obs.to ?? "?"}`;
+      $("support").textContent = (a.support && a.support.text) || "–";
+      $("knownClass").textContent = a.known_class ?? "none";
+
+      const c = evidence.cosmos;
+      $("cosmosBadge").textContent = c.source + (c.model ? ` · ${c.model}` : "");
+      $("sentences").innerHTML = "";
+      for (const s of c.sentences) {
+        const p = document.createElement("p");
+        p.className = "sentence" + (s === c.failureSentence ? " failure" : "");
+        p.textContent = s;
+        $("sentences").appendChild(p);
+      }
+
+      const sm = evidence.summary;
+      $("summary").innerHTML = "";
+      for (const label of ["gripper", "part", "fixture"]) {
+        const div = document.createElement("div");
+        div.className = "kv";
+        div.innerHTML =
+          `<span class="k">${DISPLAY[label]}</span>` +
+          `mean conf ${fmt(sm.meanConf[label])} · seen in ${(sm.detectionRate[label] * 100).toFixed(0)}% of frames`;
+        $("summary").appendChild(div);
+      }
+    }
+
+    function renderTime() {
+      const t = parseFloat(slider.value);
+      $("timeLabel").textContent = `t = ${t.toFixed(2)} s`;
+      if (!evidence) return;
+      const at = evidence.atTime(t);
+      $("frameNo").textContent = at.frame ?? "–";
+      $("tags").innerHTML = "";
+      for (const label of ["gripper", "part", "fixture"]) {
+        const span = document.createElement("span");
+        const tag = formatTag(at[label], DISPLAY[label]);
+        span.className = "tag" + (tag ? "" : " missing");
+        span.textContent = tag || `${DISPLAY[label]}: no detection`;
+        $("tags").appendChild(span);
+      }
+      $("gripperPos").textContent = at.gripper ? `${fmt(at.gripper.cx, 3)}, ${fmt(at.gripper.cy, 3)}` : "–";
+      $("partPos").textContent = at.part ? `${fmt(at.part.cx, 3)}, ${fmt(at.part.cy, 3)}` : "–";
+    }
+
+    async function load() {
+      $("error").hidden = true;
+      try {
+        evidence = await loadEvidence(runSel.value);
+        if (typeof evidence.duration === "number") {
+          slider.max = evidence.duration.toFixed(2);
+        }
+        renderStatic();
+        renderTime();
+      } catch (err) {
+        $("error").textContent = `Failed to load ${runSel.value}: ${err.message}`;
+        $("error").hidden = false;
+      }
+    }
+
+    runSel.addEventListener("change", load);
+    slider.addEventListener("input", renderTime);
+    load();
+  </script>
+</body>
+</html>

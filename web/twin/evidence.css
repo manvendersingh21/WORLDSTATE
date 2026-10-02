@@ -1,0 +1,90 @@
+/* WORLDSTATE evidence demo styling */
+:root {
+  --bg: #0b0e14;
+  --card: #141a26;
+  --edge: #27324a;
+  --ink: #e8eefc;
+  --dim: #8fa0c2;
+  --accent: #4da3ff;
+  --ok: #38d39f;
+  --bad: #ff6b6b;
+}
+* { box-sizing: border-box; }
+body.evidence-demo {
+  margin: 0;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.5 "SF Mono", ui-monospace, Menlo, monospace;
+}
+.evidence-demo h1 {
+  font-size: 18px;
+  margin: 0 0 4px;
+  letter-spacing: 0.04em;
+}
+.evidence-demo .sub { color: var(--dim); margin: 0 0 20px; }
+.controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.controls select {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font: inherit;
+}
+.controls input[type="range"] { width: 320px; accent-color: var(--accent); }
+.controls .time { min-width: 140px; color: var(--accent); }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.card h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--dim);
+  margin: 0 0 10px;
+}
+.tag {
+  display: inline-block;
+  background: #1d2436;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  padding: 3px 12px;
+  margin: 0 8px 8px 0;
+  color: var(--accent);
+}
+.tag.missing { color: var(--dim); border-style: dashed; }
+.kv { margin: 2px 0; }
+.kv .k { color: var(--dim); display: inline-block; min-width: 150px; }
+.status-normal { color: var(--ok); }
+.status-divergent, .status-novel, .status-anomaly { color: var(--bad); }
+.sentence { margin: 4px 0; color: var(--ink); }
+.sentence.failure {
+  color: var(--bad);
+  border-left: 3px solid var(--bad);
+  padding-left: 8px;
+}
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  border-radius: 4px;
+  padding: 1px 8px;
+  margin-left: 8px;
+  background: var(--edge);
+  color: var(--ink);
+}
+.error { color: var(--bad); }
