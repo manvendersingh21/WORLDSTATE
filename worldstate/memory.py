@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 
-from worldstate.adapters import TextEmbedder, VastMemoryAdapter, VectorIndex
+from worldstate.adapters import TextEmbedder, VastDBMemoryAdapter, VastMemoryAdapter, VectorIndex
 from worldstate.config import MEMORY_DB, VECTOR_PATH
 
 
@@ -26,6 +26,7 @@ class MemoryStore:
         self.embedder = TextEmbedder()
         self.index = VectorIndex(self.embedder.dim)
         self.vast = VastMemoryAdapter()
+        self.vastdb = VastDBMemoryAdapter()
         self.db = sqlite3.connect(MEMORY_DB, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.db.executescript(
@@ -99,6 +100,7 @@ class MemoryStore:
                 vector.tolist(),
                 {"role": ep.get("role"), "kind": ep.get("kind")},
             )
+            self.vastdb.upsert(episode_id, transcripts[episode_id], vector.tolist(), ep.get("role"), ep.get("kind"))
         self.db.commit()
         self._persist_index()
 
@@ -119,6 +121,7 @@ class MemoryStore:
         self.index.add(episode_id, vector)
         self._persist_index()
         self.vast.upsert_episode(episode_id, vector.tolist(), {"role": role, "kind": kind})
+        self.vastdb.upsert(episode_id, transcript, vector.tolist(), role, kind)
 
     def add_rule(self, version: int, text: str) -> None:
         self.db.execute("INSERT INTO rules (version, text) VALUES (?,?)", (version, text))
@@ -162,4 +165,5 @@ class MemoryStore:
             "embedder": self.embedder.mode,
             "vector_index": self.index.backend,
             "vast": self.vast.enabled,
+            "vastdb": {"enabled": self.vastdb.enabled, **self.vastdb.status},
         }

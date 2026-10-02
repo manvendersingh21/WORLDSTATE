@@ -431,6 +431,84 @@ class VastMemoryAdapter:
             return {"backend": "local", "status": "error", "detail": str(exc)}
 
 
+class VastDBMemoryAdapter:
+    """Mirror run memory into VastDB (the VAST Builders Challenge store) with the vastdb SDK.
+
+    Enabled by VDB_ENDPOINT (or S3_ENDPOINT) + VAST_ACCESS_KEY/VAST_SECRET_KEY (ACCESS_KEY/SECRET_KEY)
+    + VASTDB_BUCKET. Writes table worldstate.runs in the team bucket. Local SQLite + FAISS stay
+    the source of truth; any failure is recorded and skipped.
+    """
+
+    SCHEMA = os.environ.get("VASTDB_SCHEMA", "worldstate")
+    TABLE = os.environ.get("VASTDB_TABLE", "runs")
+
+    def __init__(self) -> None:
+        env = os.environ.get
+        self.endpoint = (env("VDB_ENDPOINT", "") or env("S3_ENDPOINT", "")).strip()
+        if self.endpoint and not self.endpoint.startswith(("http://", "https://")):
+            self.endpoint = "http://" + self.endpoint
+        self.access = (env("VAST_ACCESS_KEY", "") or env("ACCESS_KEY", "")).strip()
+        self.secret = (env("VAST_SECRET_KEY", "") or env("SECRET_KEY", "")).strip()
+        self.bucket = env("VASTDB_BUCKET", "").strip()
+        self.status: dict = {"writes": 0, "errors": 0, "last_error": None}
+        self._session = None
+        self._broken = False
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.endpoint and self.access and self.secret and self.bucket)
+
+    def _columns(self):
+        import pyarrow as pa
+
+        return pa.schema(
+            [
+                ("episode_id", pa.utf8()),
+                ("role", pa.utf8()),
+                ("kind", pa.utf8()),
+                ("text", pa.utf8()),
+                ("vector", pa.list_(pa.float32())),
+                ("updated_at", pa.utf8()),
+            ]
+        )
+
+    def upsert(self, episode_id: str, text: str, vector: list[float], role: str | None, kind: str | None) -> None:
+        if not self.enabled or self._broken:
+            return
+        try:
+            import pyarrow as pa
+            import vastdb
+            from datetime import datetime, timezone
+
+            if self._session is None:
+                self._session = vastdb.connect(
+                    endpoint=self.endpoint, access=self.access, secret=self.secret, ssl_verify=False, timeout=10
+                )
+            with self._session.transaction() as tx:
+                bucket = tx.bucket(self.bucket)
+                schema = bucket.schema(self.SCHEMA, fail_if_missing=False) or bucket.create_schema(self.SCHEMA)
+                columns = self._columns()
+                table = schema.table(self.TABLE, fail_if_missing=False) or schema.create_table(self.TABLE, columns)
+                row = pa.table(
+                    {
+                        "episode_id": [episode_id],
+                        "role": [role or ""],
+                        "kind": [kind or ""],
+                        "text": [text],
+                        "vector": [list(map(float, vector))],
+                        "updated_at": [datetime.now(timezone.utc).isoformat()],
+                    },
+                    schema=columns,
+                )
+                table.insert(row)
+            self.status["writes"] += 1
+        except Exception as exc:
+            self.status["errors"] += 1
+            self.status["last_error"] = _redact(_redact(str(exc), self.secret), self.access)[:300]
+            # One unreachable endpoint should not slow every later write.
+            self._broken = True
+
+
 class RecoveryVideoAdapter:
     """Cosmos Predict-style video generation stub. Never called for real pixels here."""
 
