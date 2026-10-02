@@ -274,7 +274,7 @@ class CosmosReasonAdapter:
             merged.append(item)
         return merged
 
-    def narrate_run(self, video_path: Path, analysis: dict) -> str | None:
+    def narrate_run(self, video_path: Path, analysis: dict, tracked: dict | None = None) -> str | None:
         """Plain-language account of one run. The graph already decided normal vs novel."""
         if not self.available:
             return None
@@ -286,13 +286,17 @@ class CosmosReasonAdapter:
             "support": (analysis.get("support") or {}).get("text"),
             "learned_path": [step["name"] for step in analysis.get("expected_path", [])],
         }
+        if tracked:
+            facts["tracked_objects"] = tracked
         prompt = (
             "Answer the question using the following format: <think>your reasoning</think>\n"
             "Then write 2-3 plain sentences, no JSON.\n"
-            "Watch this robot pick-and-place video. A world model learned the process graph from "
-            "unlabeled reference runs and produced the facts below; do not change its verdict. "
-            "Describe what physically happens in this run, and if it diverges, what the gripper and "
-            "the object do at the divergence time.\n"
+            "Watch this robot pick-and-place video: a robot gripper should pick the red cube and place "
+            "it on the green target pad. A world model learned the process graph from unlabeled "
+            "reference runs and produced the facts below; do not change its verdict. State names "
+            "describe the cube (the part), not the gripper. Describe what physically happens in this "
+            "run in order, and if it diverges, say what the cube and the gripper each do at the "
+            "divergence time and why the run is unusual.\n"
             f"Facts: {json.dumps(facts)}"
         )
         text = self._complete(prompt, video_path=video_path)

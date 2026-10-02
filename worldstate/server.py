@@ -18,7 +18,7 @@ from worldstate.config import MODEL_DIR, TRACKS_DIR, UPLOAD_DIR, WEB_DIR
 from worldstate.engine import WorldModel
 from worldstate.learn import learn_model
 from worldstate.memory import MemoryStore
-from worldstate.narrative import describe_run
+from worldstate.narrative import describe_run, run_facts
 from worldstate.perception import perceive, tracks_for
 from worldstate.series import series_from_tracks, series_from_video_flow
 
@@ -101,7 +101,13 @@ def narration(episode_id: str):
         ep = _episode(episode_id)
         cosmos = CosmosReasonAdapter()
         video_path = Path(ep["video"])
-        narrative = cosmos.narrate_run(video_path, detail) if cosmos.available else None
+        facts = run_facts(_series(ep))
+        tracked = {
+            "cube_shifted_sideways_at_s": facts["shift_t"],
+            "cube_was_lifted": facts["lifted"],
+            "cube_ended_on_target_pad": facts["ends_on_target"],
+        }
+        narrative = cosmos.narrate_run(video_path, detail, tracked) if cosmos.available else None
         events = None
         if narrative:
             summary = " ".join(ev["action"] for ev in detail["events"])

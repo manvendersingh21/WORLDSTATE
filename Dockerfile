@@ -27,7 +27,7 @@ COPY requirements.txt requirements-yolo.txt /app/
 
 RUN pip install --no-cache-dir -r requirements.txt \
  && if [ "$WITH_YOLO" = "1" ]; then \
-        pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+        pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
         && pip install --no-cache-dir -r requirements-yolo.txt; \
     fi
 
