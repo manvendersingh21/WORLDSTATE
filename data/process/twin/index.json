@@ -1,0 +1,361 @@
+{
+ "generator": "robosuite-lift",
+ "source_script": "scripts/gen_process.py",
+ "schema_version": 1,
+ "fps": 20,
+ "n_frames": 180,
+ "units": "meters",
+ "quat_order": "wxyz",
+ "up_axis": "+Z",
+ "decimals": 4,
+ "assets_dir": "web/twin/assets",
+ "camera": {
+  "name": "frontview",
+  "fovy": 28.0,
+  "width": 480,
+  "height": 360,
+  "pos": [
+   1.6,
+   0.0,
+   1.45
+  ],
+  "quat": [
+   0.5608,
+   0.4306,
+   0.4306,
+   0.5608
+  ]
+ },
+ "world": {
+  "table_top_z": 0.8,
+  "table_full_size": [
+   0.8,
+   0.8,
+   0.05
+  ],
+  "table_half_size": [
+   0.4,
+   0.4,
+   0.025
+  ],
+  "pad_center": [
+   0.0,
+   0.12,
+   0.801
+  ],
+  "pad_half_size": [
+   0.04,
+   0.04,
+   0.001
+  ],
+  "pad_rgba": [
+   0.15,
+   0.7,
+   0.25,
+   1.0
+  ],
+  "cube_half_size": [
+   0.02146,
+   0.02139,
+   0.02188
+  ],
+  "robot_base_pos": [
+   -0.56,
+   0.0,
+   0.912
+  ],
+  "robot_base_quat": [
+   1.0,
+   0.0,
+   0.0,
+   0.0
+  ]
+ },
+ "replay": {
+  "env_seed": 40,
+  "frame0_eef_aligned_to_labels": true,
+  "note": "gen_process is not bit-reproducible under robosuite 1.5.2: the robot reset noise and the cube half-extents come from MujocoEnv's entropy-seeded self.rng, which np.random.seed no longer reaches. These are the residuals of this replay against data/process/labels, in metres.",
+  "eef_err_max": 0.019423,
+  "eef_err_median": 0.000228,
+  "cube_err_max": 0.003602,
+  "cube_err_median": 5.1e-05,
+  "ik_residual_max": 0.0,
+  "gripper_closed_mismatches": 0,
+  "frames_compared": 4320
+ },
+ "links": [
+  {
+   "name": "link0",
+   "body": "robot0_link0",
+   "mesh": "link0.glb"
+  },
+  {
+   "name": "link1",
+   "body": "robot0_link1",
+   "mesh": "link1.glb"
+  },
+  {
+   "name": "link2",
+   "body": "robot0_link2",
+   "mesh": "link2.glb"
+  },
+  {
+   "name": "link3",
+   "body": "robot0_link3",
+   "mesh": "link3.glb"
+  },
+  {
+   "name": "link4",
+   "body": "robot0_link4",
+   "mesh": "link4.glb"
+  },
+  {
+   "name": "link5",
+   "body": "robot0_link5",
+   "mesh": "link5.glb"
+  },
+  {
+   "name": "link6",
+   "body": "robot0_link6",
+   "mesh": "link6.glb"
+  },
+  {
+   "name": "link7",
+   "body": "robot0_link7",
+   "mesh": "link7.glb"
+  },
+  {
+   "name": "hand",
+   "body": "gripper0_right_right_gripper",
+   "mesh": "hand.glb"
+  },
+  {
+   "name": "leftfinger",
+   "body": "gripper0_right_leftfinger",
+   "mesh": "leftfinger.glb"
+  },
+  {
+   "name": "rightfinger",
+   "body": "gripper0_right_rightfinger",
+   "mesh": "rightfinger.glb"
+  }
+ ],
+ "episodes": [
+  {
+   "id": "normal_00",
+   "kind": "normal",
+   "seed": 0,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_00.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_01",
+   "kind": "normal",
+   "seed": 1,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_01.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_02",
+   "kind": "normal",
+   "seed": 2,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_02.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_03",
+   "kind": "normal",
+   "seed": 3,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_03.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_04",
+   "kind": "normal",
+   "seed": 4,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_04.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_05",
+   "kind": "normal",
+   "seed": 5,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_05.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_06",
+   "kind": "normal",
+   "seed": 6,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_06.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_07",
+   "kind": "normal",
+   "seed": 7,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_07.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_08",
+   "kind": "normal",
+   "seed": 8,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_08.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_09",
+   "kind": "normal",
+   "seed": 9,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_09.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_10",
+   "kind": "normal",
+   "seed": 10,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_10.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_11",
+   "kind": "normal",
+   "seed": 11,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_11.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_12",
+   "kind": "normal",
+   "seed": 12,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_12.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_13",
+   "kind": "normal",
+   "seed": 13,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_13.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_14",
+   "kind": "normal",
+   "seed": 14,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_14.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_15",
+   "kind": "normal",
+   "seed": 15,
+   "role": "reference",
+   "split": "train",
+   "file": "normal_15.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_16",
+   "kind": "normal",
+   "seed": 16,
+   "role": "heldout_normal",
+   "split": "test",
+   "file": "normal_16.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_17",
+   "kind": "normal",
+   "seed": 17,
+   "role": "heldout_normal",
+   "split": "test",
+   "file": "normal_17.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_18",
+   "kind": "normal",
+   "seed": 18,
+   "role": "heldout_normal",
+   "split": "test",
+   "file": "normal_18.json",
+   "n_frames": 180
+  },
+  {
+   "id": "normal_19",
+   "kind": "normal",
+   "seed": 19,
+   "role": "heldout_normal",
+   "split": "test",
+   "file": "normal_19.json",
+   "n_frames": 180
+  },
+  {
+   "id": "miss_unseen",
+   "kind": "miss_right",
+   "seed": 100,
+   "role": "unseen_failure",
+   "split": "test",
+   "file": "miss_unseen.json",
+   "n_frames": 180
+  },
+  {
+   "id": "miss_eval_right",
+   "kind": "miss_right",
+   "seed": 101,
+   "role": "eval_failure",
+   "split": "test",
+   "file": "miss_eval_right.json",
+   "n_frames": 180
+  },
+  {
+   "id": "miss_eval_left",
+   "kind": "miss_left",
+   "seed": 102,
+   "role": "eval_failure",
+   "split": "test",
+   "file": "miss_eval_left.json",
+   "n_frames": 180
+  },
+  {
+   "id": "miss_similar",
+   "kind": "miss_right",
+   "seed": 103,
+   "role": "similar_hidden",
+   "split": "test",
+   "file": "miss_similar.json",
+   "n_frames": 180
+  }
+ ]
+}

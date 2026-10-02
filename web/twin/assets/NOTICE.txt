@@ -1,0 +1,33 @@
+WORLDSTATE browser digital twin -- third-party asset attributions
+================================================================
+
+The GLB files in this directory (link0..link7, hand, leftfinger, rightfinger)
+were produced by scripts/export_twin.py from the visual meshes that ship with
+robosuite, baked into each link's body frame and decimated for the browser.
+No geometry from any other source is included.
+
+robosuite
+    Copyright (c) 2018-2024 ARISE Initiative.
+    Licensed under the MIT License.
+    https://github.com/ARISE-Initiative/robosuite
+    Source of the MuJoCo model (robots/panda/robot.xml, grippers/panda_gripper.xml)
+    and of the mesh files under models/assets/robots/panda and
+    models/assets/grippers/meshes/panda_gripper.
+
+Franka Emika Panda description
+    Copyright the Franka Emika GmbH / franka_ros contributors.
+    Licensed under the Apache License, Version 2.0.
+    https://github.com/frankaemika/franka_ros
+    http://www.apache.org/licenses/LICENSE-2.0
+    The Panda arm, hand and finger meshes redistributed by robosuite derive from
+    these assets. They are redistributed here unmodified in shape apart from
+    mesh decimation and a rigid change of coordinate frame.
+
+MuJoCo
+    Copyright (c) Google DeepMind. Licensed under the Apache License, Version 2.0.
+    https://github.com/google-deepmind/mujoco
+    Used to compile the model from which these meshes were extracted.
+
+A copy of the Apache License, Version 2.0 is available at
+http://www.apache.org/licenses/LICENSE-2.0. No trademark rights of Franka Emika
+GmbH are granted by these licenses.
