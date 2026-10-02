@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import socket
 import subprocess
@@ -14,7 +15,8 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB_ROOT = ROOT / "web"
-RESERVED_PORTS = {8000, 8100, 8210}
+SHOT_DIR = Path("/tmp/twin2-shots")
+RESERVED_PORTS = {8000, 8100, 8101, 8210}
 EXPECTED_GLB_NAMES = {
     "link0.glb",
     "link1.glb",
@@ -72,6 +74,67 @@ def _stable_canvas_hash(page, max_samples: int = 8, settle_ms: int = 120) -> str
             return current
         last = current
     return last
+
+
+def _capture_comparison_shots(page, run_id: str, at_s: float) -> list[Path]:
+    SHOT_DIR.mkdir(parents=True, exist_ok=True)
+    page.evaluate(
+        "(at) => { window.__twin.pause(); window.__twin.setTime(at); }",
+        at_s,
+    )
+    paths: list[Path] = []
+    for preset in ("perspective", "front", "side", "top"):
+        page.click(f"button[data-preset='{preset}']")
+        _stable_canvas_hash(page)
+        path = SHOT_DIR / f"{run_id}_t{at_s:g}_{preset}.png"
+        page.locator(".twin-root").screenshot(path=str(path))
+        assert path.stat().st_size > 10_000, f"Comparison screenshot is unexpectedly small: {path}"
+        paths.append(path)
+    return paths
+
+
+def _framing_probe(page) -> dict[str, float | int]:
+    encoded = base64.b64encode(page.locator("#twin-canvas").screenshot()).decode("ascii")
+    return page.evaluate(
+        """async (encoded) => {
+            const image = new Image();
+            image.src = `data:image/png;base64,${encoded}`;
+            await image.decode();
+            const probe = document.createElement('canvas');
+            probe.width = image.naturalWidth;
+            probe.height = image.naturalHeight;
+            const ctx = probe.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(image, 0, 0);
+            const pixels = ctx.getImageData(0, 0, probe.width, probe.height).data;
+            const stride = Math.max(2, Math.floor(probe.width / 360));
+            let topSamples = 0;
+            let topRobotLike = 0;
+            let middleRobotLike = 0;
+            for (let y = 0; y < probe.height; y += stride) {
+                for (let x = 0; x < probe.width; x += stride) {
+                    const i = (y * probe.width + x) * 4;
+                    const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+                    const max = Math.max(r, g, b);
+                    const min = Math.min(r, g, b);
+                    const robotLike = (0.2126 * r + 0.7152 * g + 0.0722 * b) > 115
+                        && max - min < 48;
+                    if (y < probe.height * 0.10) {
+                        topSamples += 1;
+                        if (robotLike) topRobotLike += 1;
+                    } else if (y > probe.height * 0.18 && y < probe.height * 0.72 && robotLike) {
+                        middleRobotLike += 1;
+                    }
+                }
+            }
+            return {
+                topRobotRatio: topRobotLike / Math.max(topSamples, 1),
+                middleRobotLike,
+                width: probe.width,
+                height: probe.height,
+            };
+        }""",
+        encoded,
+    )
 
 
 @pytest.fixture(scope="module")
@@ -178,11 +241,23 @@ def test_twin_index_demo_behaviors(twin_demo_server):
         assert pixel_probe["width"] > 0 and pixel_probe["height"] > 0
         assert pixel_probe["nonBg"] >= 2, f"Canvas appears blank/background-only: {pixel_probe}"
 
+        # The default view must frame the complete robot with clear headroom. Bright,
+        # low-saturation pixels identify Panda bodywork without relying on exact colors.
+        page.click("button[data-preset='perspective']")
+        page.evaluate("() => { window.__twin.pause(); window.__twin.setTime(0); }")
+        _stable_canvas_hash(page)
+        framing = _framing_probe(page)
+
         page.select_option("#twin-run-select", "miss_unseen")
         page.wait_for_function(
             "() => document.getElementById('twin-run-select')?.value === 'miss_unseen' "
             "&& document.querySelector('.twin-root')?.dataset.status !== 'loading'",
             timeout=30_000,
+        )
+        # The standalone page's optional dev analysis file is not part of the module
+        # fixture, so drive the public analysis API directly and deterministically.
+        page.evaluate(
+            "() => window.__twin.setAnalysis({ status: 'anomaly', first_divergence_s: 1.904 })"
         )
 
         page.evaluate("() => window.__twin.setTime(1.0)")
@@ -196,13 +271,30 @@ def test_twin_index_demo_behaviors(twin_demo_server):
         divergence_text = page.locator("#twin-divergence").inner_text()
         assert "REALITY DIVERGED" in divergence_text
         assert "1.904" in divergence_text
+        miss_shots = _capture_comparison_shots(page, "miss_unseen", 2.5)
 
         page.select_option("#twin-run-select", "normal_16")
         page.wait_for_function(
             "() => document.getElementById('twin-run-select')?.value === 'normal_16' "
-            "&& document.querySelector('.twin-root')?.dataset.status === 'normal'",
+            "&& document.querySelector('.twin-root')?.dataset.status !== 'loading'",
             timeout=30_000,
         )
+        page.evaluate(
+            """() => window.__twin.setAnalysis({
+                status: 'normal',
+                sequence: [
+                    { t: 0, name: 'APPROACH' },
+                    { t: 2, name: 'GRASP' },
+                    { t: 4, name: 'LIFT' },
+                ],
+            })"""
+        )
+        page.wait_for_function(
+            "() => document.querySelector('.twin-root')?.dataset.status === 'normal'",
+            timeout=10_000,
+        )
+        normal_shots = _capture_comparison_shots(page, "normal_16", 4.0)
+        assert len({*miss_shots, *normal_shots}) == 8
         state_05 = page.evaluate(
             "() => { window.__twin.setTime(0.5); return document.getElementById('twin-state-label').textContent.trim(); }"
         )
@@ -257,10 +349,16 @@ def test_twin_index_demo_behaviors(twin_demo_server):
             }"""
         )
         assert perf["count"] >= 60, f"Too few frame samples collected: {perf}"
-        assert perf["avg"] < 33.0, f"Average frame time too high: {perf['avg']:.2f} ms"
+        assert perf["avg"] < 25.0, f"Average frame time too high: {perf['avg']:.2f} ms"
 
         context.close()
         browser.close()
 
     assert not console_errors, f"Console errors seen: {console_errors}"
     assert not page_errors, f"Page errors seen: {page_errors}"
+    assert framing["topRobotRatio"] < 0.08, (
+        f"Default perspective lacks clear headroom; bright robot-like pixels reach the top band: {framing}"
+    )
+    assert framing["middleRobotLike"] >= 100, (
+        f"Default perspective does not show enough robot bodywork in the middle band: {framing}"
+    )

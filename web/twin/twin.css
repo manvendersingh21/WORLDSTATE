@@ -17,6 +17,22 @@
   inset: 0;
   display: block;
   outline: none;
+  z-index: 0;
+}
+
+/* Subtle lens vignette for photographic depth (CSS-only, zero GPU cost). */
+.twin-root::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 120% 95% at 50% 42%,
+    rgba(0, 0, 0, 0) 52%,
+    rgba(0, 0, 0, 0.14) 78%,
+    rgba(0, 0, 0, 0.36) 100%
+  );
 }
 
 .twin-hud {
@@ -24,6 +40,7 @@
   inset: 0;
   pointer-events: none;
   display: block;
+  z-index: 2;
 }
 
 /* --- top-left: state + divergence ------------------------------------- */

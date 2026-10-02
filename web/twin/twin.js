@@ -13,13 +13,14 @@ import * as THREE from './vendor/three.module.js';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { GLTFLoader } from './vendor/GLTFLoader.js';
 import { RoomEnvironment } from './vendor/RoomEnvironment.js';
+import { RoundedBoxGeometry } from './vendor/RoundedBoxGeometry.js';
 
 const LINK_ORDER = [
   'link0', 'link1', 'link2', 'link3', 'link4', 'link5', 'link6', 'link7',
   'hand', 'leftfinger', 'rightfinger',
 ];
 
-const BG_COLOR = 0x080a0d;
+const BG_COLOR = 0x0a0c0f;
 const REFERENCE_RUN = 'normal_16'; // normal episode used for the "expected" path
 
 // ---------------------------------------------------------------------------
@@ -43,6 +44,112 @@ function el(tag, attrs = {}, text) {
 function quatFromWxyz(q, out) {
   out.set(q[1], q[2], q[3], q[0]); // wxyz -> THREE xyzw
   return out;
+}
+
+// ----- Procedural textures (industrial cell look, zero network) -------------
+
+function makeConcreteTexture() {
+  const s = 1024;
+  const c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d');
+  g.fillStyle = '#313437';
+  g.fillRect(0, 0, s, s);
+  // Large soft tonal blotches (trowel / cure variation)
+  for (let i = 0; i < 70; i++) {
+    const x = Math.random() * s, y = Math.random() * s, r = 60 + Math.random() * 190;
+    const dark = Math.random() < 0.55;
+    const grad = g.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, dark ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.04)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  }
+  // Fine aggregate speckle
+  for (let i = 0; i < 15000; i++) {
+    const a = 0.02 + Math.random() * 0.05;
+    g.fillStyle = Math.random() < 0.5 ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a})`;
+    g.fillRect(Math.random() * s, Math.random() * s, 1.4, 1.4);
+  }
+  // Saw-cut joint lines: 2x2 tiles per texture repeat
+  g.strokeStyle = 'rgba(10,11,12,0.8)';
+  g.lineWidth = 4;
+  for (const p of [0, s / 2, s]) {
+    g.beginPath(); g.moveTo(p, 0); g.lineTo(p, s); g.stroke();
+    g.beginPath(); g.moveTo(0, p); g.lineTo(s, p); g.stroke();
+  }
+  g.strokeStyle = 'rgba(255,255,255,0.045)';
+  g.lineWidth = 1.5;
+  for (const p of [3, s / 2 + 3]) {
+    g.beginPath(); g.moveTo(p, 0); g.lineTo(p, s); g.stroke();
+    g.beginPath(); g.moveTo(0, p); g.lineTo(s, p); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeBrushedTexture() {
+  // Luminance map used as roughnessMap: base ~0.72 with horizontal streaks.
+  const w = 512, h = 512;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.fillStyle = '#b8b8b8';
+  g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 2600; i++) {
+    const y = Math.random() * h;
+    const x = Math.random() * w;
+    const len = 30 + Math.random() * 190;
+    const a = 0.03 + Math.random() * 0.09;
+    g.strokeStyle = Math.random() < 0.5 ? `rgba(255,255,255,${a})` : `rgba(40,40,40,${a})`;
+    g.lineWidth = 0.8 + Math.random() * 0.9;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + len, y); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function makeHazardTexture() {
+  // Muted industrial yellow/black diagonal tape, tileable along X.
+  const w = 128, h = 64;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.fillStyle = '#17171a';
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = '#8f7b25';
+  const stripe = 32;
+  for (let x = -h; x < w + h; x += stripe * 2) {
+    g.beginPath();
+    g.moveTo(x, h); g.lineTo(x + h, 0); g.lineTo(x + h + stripe, 0); g.lineTo(x + stripe, h);
+    g.closePath(); g.fill();
+  }
+  // grime
+  for (let i = 0; i < 900; i++) {
+    g.fillStyle = `rgba(0,0,0,${0.04 + Math.random() * 0.1})`;
+    g.fillRect(Math.random() * w, Math.random() * h, 1.5, 1.5);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeShadowBlobTexture() {
+  const s = 256;
+  const c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  grad.addColorStop(0, 'rgba(0,0,0,0.85)');
+  grad.addColorStop(0.55, 'rgba(0,0,0,0.38)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, s, s);
+  return new THREE.CanvasTexture(c);
 }
 
 // ---------------------------------------------------------------------------
@@ -102,22 +209,26 @@ export function mountTwin(container, options = {}) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.12;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.domElement.id = 'twin-canvas';
   renderer.domElement.className = 'twin-canvas';
   root.insertBefore(renderer.domElement, hud);
 
+  const maxAniso = Math.min(renderer.capabilities.getMaxAnisotropy() || 1, 8);
+
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(BG_COLOR);
+  // Subtle depth haze: industrial hall falling off into darkness.
+  scene.fog = new THREE.Fog(BG_COLOR, 4.5, 12.5);
 
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.45;
+  scene.environmentIntensity = 0.55;
 
   // MuJoCo data is Z-up; keep the scene Z-up and tell the camera.
-  const camera = new THREE.PerspectiveCamera(36, 1, 0.05, 50);
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 50);
   camera.up.set(0, 0, 1);
 
   const controls = new OrbitControls(camera, renderer.domElement);
@@ -127,11 +238,13 @@ export function mountTwin(container, options = {}) {
   controls.maxDistance = 7;
 
   const PRESETS = {
-    perspective: { pos: [1.3, -1.1, 1.7], target: [0, 0, 0.85], fov: 36 },
+    // Default framing: whole arm + cell visible with clear headroom at the top
+    // (arm reaches link z ~1.56 m when upright at t=0; keep it below the top 10%).
+    perspective: { pos: [2.35, -1.8, 1.45], target: [-0.1, 0.02, 0.82], fov: 43 },
     // Front ~= dataset "frontview" camera (pos [1.6,0,1.45], fovy 28, looking slightly down at the cell)
     front: { pos: [1.6, 0, 1.45], target: [0, 0, 1.0], fov: 28 },
-    side: { pos: [0, -2.05, 1.15], target: [0, 0, 0.85], fov: 32 },
-    top: { pos: [0.02, -0.14, 2.9], target: [0, 0, 0.8], fov: 34 },
+    side: { pos: [0.05, -2.35, 1.3], target: [-0.05, 0, 0.78], fov: 35 },
+    top: { pos: [0.02, -0.14, 3.05], target: [0, 0, 0.8], fov: 35 },
   };
 
   function setPreset(name) {
@@ -149,36 +262,92 @@ export function mountTwin(container, options = {}) {
   setPreset('perspective');
 
   // ----- Lights --------------------------------------------------------------
-  const keyLight = new THREE.DirectionalLight(0xffffff, 2.6);
-  keyLight.position.set(1.5, -1.1, 2.9);
+  // Key: high bay luminaire — slightly warm, tight high-res soft shadows.
+  const keyLight = new THREE.DirectionalLight(0xfff1e0, 2.7);
+  keyLight.position.set(1.7, -1.3, 3.1);
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.set(2048, 2048);
   keyLight.shadow.camera.near = 0.5;
-  keyLight.shadow.camera.far = 7;
-  keyLight.shadow.camera.left = -1.4;
-  keyLight.shadow.camera.right = 1.4;
-  keyLight.shadow.camera.top = 1.4;
-  keyLight.shadow.camera.bottom = -1.4;
+  keyLight.shadow.camera.far = 8;
+  keyLight.shadow.camera.left = -1.6;
+  keyLight.shadow.camera.right = 1.6;
+  keyLight.shadow.camera.top = 1.6;
+  keyLight.shadow.camera.bottom = -1.6;
   keyLight.shadow.bias = -0.0002;
-  keyLight.shadow.radius = 4;
+  keyLight.shadow.normalBias = 0.01;
+  keyLight.shadow.radius = 5;
   keyLight.target.position.set(0, 0, 0.8);
   scene.add(keyLight, keyLight.target);
 
-  const fillLight = new THREE.DirectionalLight(0xbdd0e4, 0.55);
+  // Cool sky fill from the opposite side.
+  const fillLight = new THREE.DirectionalLight(0xbdd0e4, 0.45);
   fillLight.position.set(-1.8, 1.5, 1.4);
   scene.add(fillLight);
+
+  // Faint cool rim to separate the white shell from the dark hall.
+  const rimLight = new THREE.DirectionalLight(0x8fa8c8, 0.5);
+  rimLight.position.set(-1.4, 2.2, 2.3);
+  scene.add(rimLight);
 
   // ----- Static cell ---------------------------------------------------------
   const disposables = [];
   function track(obj) { disposables.push(obj); return obj; }
 
-  const floorMat = track(new THREE.MeshStandardMaterial({ color: 0x0c0f13, roughness: 0.96, metalness: 0.0 }));
-  const floor = new THREE.Mesh(track(new THREE.CircleGeometry(3.2, 48)), floorMat);
+  const concreteTex = track(makeConcreteTexture());
+  concreteTex.repeat.set(7, 7);
+  concreteTex.anisotropy = maxAniso;
+  const concreteBump = track(makeConcreteTexture());
+  concreteBump.repeat.set(7, 7);
+  concreteBump.anisotropy = maxAniso;
+  const brushedTex = track(makeBrushedTexture());
+  brushedTex.anisotropy = maxAniso;
+  const hazardTex = track(makeHazardTexture());
+  hazardTex.anisotropy = maxAniso;
+  const blobTex = track(makeShadowBlobTexture());
+
+  // Polished concrete slab with saw-cut joints, fading into the haze.
+  const floorMat = track(new THREE.MeshStandardMaterial({
+    color: 0x97999c,
+    map: concreteTex,
+    bumpMap: concreteBump,
+    bumpScale: 0.4,
+    roughness: 0.88,
+    metalness: 0.0,
+    envMapIntensity: 0.7,
+  }));
+  const floor = new THREE.Mesh(track(new THREE.PlaneGeometry(14, 14)), floorMat);
   floor.receiveShadow = true;
   scene.add(floor);
 
-  const tableMat = track(new THREE.MeshStandardMaterial({ color: 0x2a2e33, roughness: 0.55, metalness: 0.25 }));
-  const legMat = track(new THREE.MeshStandardMaterial({ color: 0x1b1e22, roughness: 0.6, metalness: 0.35 }));
+  // Floor safety marking: muted yellow/black tape square around the cell.
+  const hazardMat = track(new THREE.MeshStandardMaterial({
+    map: hazardTex, roughness: 0.85, metalness: 0.0,
+    polygonOffset: true, polygonOffsetFactor: -1,
+  }));
+  const TAPE = { half: 1.5, w: 0.09 };
+  for (let i = 0; i < 4; i++) {
+    const horizontal = i < 2;
+    const len = TAPE.half * 2 + TAPE.w;
+    const geo = track(new THREE.PlaneGeometry(len, TAPE.w));
+    const strip = new THREE.Mesh(geo, hazardMat);
+    const off = (i % 2 === 0 ? 1 : -1) * TAPE.half;
+    if (horizontal) strip.position.set(0, off, 0.002);
+    else { strip.position.set(off, 0, 0.002); strip.rotation.z = Math.PI / 2; }
+    strip.receiveShadow = true;
+    scene.add(strip);
+  }
+
+  // Industrial steel bench + graphite structure.
+  const tableMat = track(new THREE.MeshStandardMaterial({
+    color: 0x484d53,
+    roughness: 0.62,
+    metalness: 0.72,
+    roughnessMap: brushedTex,
+    envMapIntensity: 0.9,
+  }));
+  const legMat = track(new THREE.MeshStandardMaterial({
+    color: 0x33383e, roughness: 0.48, metalness: 0.65, envMapIntensity: 0.85,
+  }));
 
   // World constants from the agreed schema (overridden by data/index.json when loaded).
   const world = {
@@ -203,53 +372,110 @@ export function mountTwin(container, options = {}) {
     top.receiveShadow = true;
     cellGroup.add(top);
 
+    // Thin darker rim under the top (bench apron)
+    const apron = new THREE.Mesh(track(new THREE.BoxGeometry(tw - 0.02, td - 0.02, 0.035)), legMat);
+    apron.position.set(0, 0, world.tableTopZ - th - 0.0175);
+    apron.castShadow = true;
+    cellGroup.add(apron);
+
     const legH = world.tableTopZ - th;
-    const legGeo = track(new THREE.BoxGeometry(0.06, 0.06, legH));
+    const legGeo = track(new THREE.BoxGeometry(0.055, 0.055, legH));
     for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
       const leg = new THREE.Mesh(legGeo, legMat);
-      leg.position.set(sx * (tw / 2 - 0.06), sy * (td / 2 - 0.06), legH / 2);
+      leg.position.set(sx * (tw / 2 - 0.07), sy * (td / 2 - 0.07), legH / 2);
       leg.castShadow = true;
       leg.receiveShadow = true;
       cellGroup.add(leg);
     }
 
+    // Matte rubber placement mat, slightly inset into the bench top.
     const padMat = track(new THREE.MeshStandardMaterial({
-      color: new THREE.Color(...world.padRgb), roughness: 0.75, metalness: 0.05,
+      color: new THREE.Color(world.padRgb[0] * 0.5, world.padRgb[1] * 0.55, world.padRgb[2] * 0.5),
+      roughness: 0.95,
+      metalness: 0.0,
+      envMapIntensity: 0.5,
     }));
     const pad = new THREE.Mesh(
       track(new THREE.BoxGeometry(world.padHalf[0] * 2, world.padHalf[1] * 2, world.padHalf[2] * 2)),
       padMat);
-    pad.position.set(...world.padCenter);
+    pad.position.set(world.padCenter[0], world.padCenter[1], world.padCenter[2] - world.padHalf[2] * 0.5);
     pad.receiveShadow = true;
     cellGroup.add(pad);
 
-    // Pedestal under the robot base (the recorded base pose floats at ~0.91 m)
+    // Robot pedestal: steel column + floor flange (recorded base floats at ~0.91 m).
     const [bx, by, bz] = world.robotBase;
-    const pedestal = new THREE.Mesh(track(new THREE.BoxGeometry(0.3, 0.3, bz)), legMat);
+    const pedestal = new THREE.Mesh(track(new THREE.CylinderGeometry(0.13, 0.15, bz, 32)), legMat);
+    pedestal.rotation.x = Math.PI / 2; // cylinder Y-axis -> Z-up
     pedestal.position.set(bx, by, bz / 2);
     pedestal.castShadow = true;
     pedestal.receiveShadow = true;
     cellGroup.add(pedestal);
-    const basePlate = new THREE.Mesh(track(new THREE.BoxGeometry(0.42, 0.42, 0.02)), tableMat);
-    basePlate.position.set(bx, by, 0.01);
-    basePlate.receiveShadow = true;
-    cellGroup.add(basePlate);
+
+    const flange = new THREE.Mesh(track(new THREE.CylinderGeometry(0.21, 0.23, 0.025, 32)), tableMat);
+    flange.rotation.x = Math.PI / 2;
+    flange.position.set(bx, by, 0.0125);
+    flange.castShadow = true;
+    flange.receiveShadow = true;
+    cellGroup.add(flange);
+
+    // Mounting plate right under the arm base.
+    const plate = new THREE.Mesh(track(new THREE.CylinderGeometry(0.105, 0.105, 0.016, 32)), tableMat);
+    plate.rotation.x = Math.PI / 2;
+    plate.position.set(bx, by, bz + 0.008 - 0.016);
+    plate.castShadow = true;
+    cellGroup.add(plate);
+
+    // Soft contact shadow under the pedestal.
+    const pedBlobMat = track(new THREE.MeshBasicMaterial({
+      map: blobTex, transparent: true, opacity: 0.55, depthWrite: false,
+    }));
+    const pedBlob = new THREE.Mesh(track(new THREE.PlaneGeometry(0.85, 0.85)), pedBlobMat);
+    pedBlob.position.set(bx, by, 0.0015);
+    pedBlob.renderOrder = 1;
+    cellGroup.add(pedBlob);
+
+    // Soft contact shadow under the bench.
+    const benchBlobMat = track(new THREE.MeshBasicMaterial({
+      map: blobTex, transparent: true, opacity: 0.4, depthWrite: false,
+    }));
+    const benchBlob = new THREE.Mesh(track(new THREE.PlaneGeometry(tw * 1.5, td * 1.5)), benchBlobMat);
+    benchBlob.position.set(0, 0, 0.001);
+    benchBlob.renderOrder = 1;
+    cellGroup.add(benchBlob);
   }
   buildCell();
 
-  const cubeMat = track(new THREE.MeshStandardMaterial({ color: 0xb13030, roughness: 0.5, metalness: 0.08 }));
-  let cube = new THREE.Mesh(
-    track(new THREE.BoxGeometry(world.cubeHalf[0] * 2, world.cubeHalf[1] * 2, world.cubeHalf[2] * 2)),
-    cubeMat);
+  // Work object: red anodized block with beveled edges.
+  const cubeMat = track(new THREE.MeshStandardMaterial({
+    color: 0x9c2723,
+    roughness: 0.48,
+    metalness: 0.35,
+    envMapIntensity: 0.9,
+  }));
+  function makeCubeGeometry() {
+    const bevel = Math.min(world.cubeHalf[0], world.cubeHalf[1], world.cubeHalf[2]) * 0.22;
+    return track(new RoundedBoxGeometry(
+      world.cubeHalf[0] * 2, world.cubeHalf[1] * 2, world.cubeHalf[2] * 2, 3, bevel));
+  }
+  let cube = new THREE.Mesh(makeCubeGeometry(), cubeMat);
   cube.castShadow = true;
   cube.receiveShadow = true;
   cube.visible = false;
   scene.add(cube);
 
+  // Moving contact shadow under the cube (fades as the gripper lifts it).
+  const cubeBlobMat = track(new THREE.MeshBasicMaterial({
+    map: blobTex, transparent: true, opacity: 0.5, depthWrite: false,
+  }));
+  const cubeBlob = new THREE.Mesh(track(new THREE.PlaneGeometry(0.095, 0.095)), cubeBlobMat);
+  cubeBlob.renderOrder = 1;
+  cubeBlob.visible = false;
+  scene.add(cubeBlob);
+
   // Divergence marker (subtle red ring + dot at the cube's divergence position)
   const markerGroup = new THREE.Group();
-  const ringMat = track(new THREE.MeshBasicMaterial({ color: 0xff5050, transparent: true, opacity: 0.8, side: THREE.DoubleSide }));
-  const ring = new THREE.Mesh(track(new THREE.RingGeometry(0.045, 0.055, 48)), ringMat);
+  const ringMat = track(new THREE.MeshBasicMaterial({ color: 0xff5050, transparent: true, opacity: 0.75, side: THREE.DoubleSide }));
+  const ring = new THREE.Mesh(track(new THREE.RingGeometry(0.048, 0.0545, 64)), ringMat);
   const dotMat = track(new THREE.MeshBasicMaterial({ color: 0xff5050, transparent: true, opacity: 0.9 }));
   const dot = new THREE.Mesh(track(new THREE.SphereGeometry(0.008, 16, 12)), dotMat);
   markerGroup.add(ring, dot);
@@ -257,16 +483,68 @@ export function mountTwin(container, options = {}) {
   scene.add(markerGroup);
 
   // Trajectory overlays (expected = amber from a normal episode, actual = cyan)
-  const expectedLineMat = track(new THREE.LineBasicMaterial({ color: 0xc9a227, transparent: true, opacity: 0.55 }));
-  const actualLineMat = track(new THREE.LineBasicMaterial({ color: 0x37c3d6, transparent: true, opacity: 0.7 }));
+  const expectedLineMat = track(new THREE.LineBasicMaterial({ color: 0xc9a227, transparent: true, opacity: 0.5 }));
+  const actualLineMat = track(new THREE.LineBasicMaterial({ color: 0x37c3d6, transparent: true, opacity: 0.65 }));
   const divergeDotMat = track(new THREE.MeshBasicMaterial({ color: 0xff5050 }));
   let expectedLine = null;
   let actualLine = null;
   let divergeDot = null;
 
+  // ----- World constants from the dataset index --------------------------------
+  function rebuildWorldDependent() {
+    buildCell();
+    const old = cube.geometry;
+    cube.geometry = makeCubeGeometry();
+    if (old) old.dispose();
+    applyTime(currentTime, true);
+  }
+  (async () => {
+    try {
+      const res = await fetch(`${dataBase}/index.json`);
+      if (!res.ok) return;
+      const idx = await res.json();
+      if (disposed || !idx || !idx.world) return;
+      const w = idx.world;
+      if (w.table_top_z != null) world.tableTopZ = w.table_top_z;
+      if (Array.isArray(w.table_full_size)) world.tableFull = w.table_full_size;
+      if (Array.isArray(w.pad_center)) world.padCenter = w.pad_center;
+      if (Array.isArray(w.pad_half_size)) world.padHalf = w.pad_half_size;
+      if (Array.isArray(w.pad_rgba)) world.padRgb = w.pad_rgba.slice(0, 3);
+      if (Array.isArray(w.cube_half_size)) world.cubeHalf = w.cube_half_size;
+      if (Array.isArray(w.robot_base_pos)) world.robotBase = w.robot_base_pos;
+      rebuildWorldDependent();
+    } catch { /* index.json is optional; defaults match the agreed schema */ }
+  })();
+
   // ----- Robot meshes ----------------------------------------------------------
-  // The GLBs carry their own PBR white/graphite materials (baked from the MJCF),
-  // but ship positions only — compute smooth vertex normals so PBR shading works.
+  // The GLBs carry baked PBR colors; restyle per material family so the arm reads
+  // as glossy white painted metal + dark graphite joints + brushed-steel fingers.
+  function styleRobotMaterial(linkName, mat) {
+    if (!mat || !mat.color) return;
+    const hsl = { h: 0, s: 0, l: 0 };
+    mat.color.getHSL(hsl);
+    if (linkName === 'leftfinger' || linkName === 'rightfinger') {
+      // Brushed aluminum gripper fingers.
+      mat.color.set(0xafb4ba);
+      mat.metalness = 0.85;
+      mat.roughness = 0.42;
+      mat.roughnessMap = brushedTex;
+      mat.envMapIntensity = 0.95;
+    } else if (hsl.l >= 0.45) {
+      // Glossy white painted shell.
+      mat.roughness = 0.34;
+      mat.metalness = 0.12;
+      mat.envMapIntensity = 1.05;
+    } else {
+      // Dark graphite joints / flanges.
+      mat.roughness = 0.46;
+      mat.metalness = 0.62;
+      mat.envMapIntensity = 0.85;
+    }
+    mat.flatShading = false;
+    mat.needsUpdate = true;
+  }
+
   const linkObjects = new Array(LINK_ORDER.length).fill(null);
   const loader = new GLTFLoader();
   let disposed = false;
@@ -284,8 +562,7 @@ export function mountTwin(container, options = {}) {
             child.geometry.computeVertexNormals();
           }
           if (child.material) {
-            child.material.flatShading = false;
-            child.material.needsUpdate = true;
+            styleRobotMaterial(name, child.material);
             track(child.material);
           }
           track(child.geometry);
@@ -333,6 +610,19 @@ export function mountTwin(container, options = {}) {
     return cur || analysis.sequence[0];
   }
 
+  function updateCubeShadow() {
+    if (!cube.visible) { cubeBlob.visible = false; return; }
+    const restZ = world.tableTopZ + world.cubeHalf[2];
+    const lift = Math.max(0, cube.position.z - restZ);
+    const k = Math.max(0, 1 - lift / 0.22);
+    cubeBlob.visible = k > 0.02;
+    if (!cubeBlob.visible) return;
+    cubeBlob.position.set(cube.position.x, cube.position.y, world.tableTopZ + 0.0015);
+    const sc = 1 + lift * 2.4;
+    cubeBlob.scale.set(sc, sc, 1);
+    cubeBlobMat.opacity = 0.5 * k;
+  }
+
   function applyTime(t, force = false) {
     currentTime = Math.max(0, Math.min(t, duration()));
     if (runData) {
@@ -352,6 +642,7 @@ export function mountTwin(container, options = {}) {
       cube.visible = true;
       lerpPose(cube, fa.cube_pos, fb.cube_pos, fa.cube_quat, fb.cube_quat, alpha);
     }
+    updateCubeShadow();
 
     // State label
     const st = stateAt(currentTime);
@@ -436,6 +727,7 @@ export function mountTwin(container, options = {}) {
     if (!data || !Array.isArray(data.frames) || data.frames.length === 0) {
       runData = null;
       cube.visible = false;
+      cubeBlob.visible = false;
       for (const obj of linkObjects) if (obj) obj.visible = false;
       expectedLine = clearLine(expectedLine);
       actualLine = clearLine(actualLine);
@@ -485,8 +777,9 @@ export function mountTwin(container, options = {}) {
       applyTime(t);
     }
     if (markerGroup.visible) {
-      const s = 1 + 0.06 * Math.sin(now * 0.004);
+      const s = 1 + 0.05 * Math.sin(now * 0.0035);
       ring.scale.set(s, s, 1);
+      ringMat.opacity = 0.6 + 0.18 * (0.5 + 0.5 * Math.sin(now * 0.0035));
     }
     controls.update();
     renderer.render(scene, camera);
@@ -523,6 +816,7 @@ export function mountTwin(container, options = {}) {
     expectedLine = clearLine(expectedLine);
     actualLine = clearLine(actualLine);
     if (divergeDot) { scene.remove(divergeDot); divergeDot.geometry.dispose(); divergeDot = null; }
+    if (cube.geometry) cube.geometry.dispose();
     for (const obj of disposables) {
       if (obj && typeof obj.dispose === 'function') obj.dispose();
     }
