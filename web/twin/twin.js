@@ -168,7 +168,7 @@ export function mountTwin(container, options = {}) {
   const topLeft = el('div', { class: 'twin-topleft' });
   const stateChip = el('div', { class: 'twin-state-chip' });
   stateChip.appendChild(el('span', { class: 'twin-chip-dot' }));
-  const stateLabel = el('span', { id: 'twin-state-label' }, '—');
+  const stateLabel = el('span', { id: 'twin-state-label' }, '');
   stateChip.appendChild(stateLabel);
   topLeft.appendChild(stateChip);
 
@@ -240,11 +240,12 @@ export function mountTwin(container, options = {}) {
   const PRESETS = {
     // Default framing: whole arm + cell visible with clear headroom at the top
     // (arm reaches link z ~1.56 m when upright at t=0; keep it below the top 10%).
-    perspective: { pos: [2.35, -1.8, 1.45], target: [-0.1, 0.02, 0.82], fov: 43 },
+    // Tight 3/4 view on the workbench: cube, gripper and pad fill the middle of the frame.
+    perspective: { pos: [0.78, -0.72, 1.16], target: [-0.02, 0.02, 0.86], fov: 38 },
     // Front ~= dataset "frontview" camera (pos [1.6,0,1.45], fovy 28, looking slightly down at the cell)
     front: { pos: [1.6, 0, 1.45], target: [0, 0, 1.0], fov: 28 },
-    side: { pos: [0.05, -2.35, 1.3], target: [-0.05, 0, 0.78], fov: 35 },
-    top: { pos: [0.02, -0.14, 3.05], target: [0, 0, 0.8], fov: 35 },
+    side: { pos: [0.02, -1.15, 1.02], target: [-0.04, 0.02, 0.86], fov: 36 },
+    top: { pos: [0.02, -0.06, 1.85], target: [0, 0.02, 0.82], fov: 35 },
   };
 
   function setPreset(name) {
@@ -645,8 +646,10 @@ export function mountTwin(container, options = {}) {
     updateCubeShadow();
 
     // State label
-    const st = stateAt(currentTime);
-    const name = st ? st.name : '—';
+    // Before the first segment starts, show the first state rather than a placeholder.
+    const seq = analysis && analysis.sequence ? analysis.sequence : [];
+    const st = stateAt(currentTime) || (seq.length ? seq[0] : null);
+    const name = st ? st.name : '';
     if (stateLabel.textContent !== name || force) {
       stateLabel.textContent = name;
       root.setAttribute('data-state', st ? st.name : '');
