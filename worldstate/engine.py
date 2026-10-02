@@ -76,6 +76,30 @@ def interpret_kinematic(feat: dict) -> tuple[str, str]:
     return scored[0][1], " · ".join(phrases)
 
 
+PRE_LIFT_NAMES = [("At pickup", "part waiting at the pickup pose"), ("Grasping part", "gripper closing on the part")]
+OFF_TARGET = {"Outside fixture", "Slides sideways", "Motion pattern"}
+
+
+def _name_pre_lift(names: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """States that come before the part first rises cannot be 'outside the fixture' yet.
+
+    Thresholds in interpret_kinematic assume the synthetic layout; in other cells the
+    pickup pose can sit closer to the fixture. Uses time order only, never boundaries.
+    """
+    lifted = next((i for i, (short, _) in enumerate(names) if short in {"Lifting part", "Carrying part", "Part raised"}), None)
+    if lifted is None or lifted == 0:
+        return names
+    out = list(names)
+    pre = list(range(lifted))
+    labels = PRE_LIFT_NAMES[-len(pre):] if len(pre) <= len(PRE_LIFT_NAMES) else (
+        [PRE_LIFT_NAMES[0]] * (len(pre) - len(PRE_LIFT_NAMES) + 1) + PRE_LIFT_NAMES[1:]
+    )
+    for i, label in zip(pre, labels):
+        if out[i][0] in OFF_TARGET:
+            out[i] = (label[0], label[1] + " · " + out[i][1])
+    return out
+
+
 def interpret_flow(feat: dict) -> tuple[str, str]:
     mag = feat["mag"]
     if mag < 0.15:
@@ -203,9 +227,14 @@ class WorldModel:
         interpret = interpret_kinematic if feature_kind == "kinematic" else interpret_flow
         feature_names = _feature_names(feature_kind, stacked.shape[1])
         used_short = set()
-        for new_index, old in enumerate(order):
+        interpreted = []
+        for old in order:
             feat = {name: float(raw_centers[old][i]) for i, name in enumerate(feature_names)}
-            short, full = interpret(feat)
+            interpreted.append(interpret(feat))
+        if feature_kind == "kinematic":
+            interpreted = _name_pre_lift(interpreted)
+        for new_index, old in enumerate(order):
+            short, full = interpreted[new_index]
             if short in used_short:
                 short = f"{short} {new_index + 1}"
             used_short.add(short)
