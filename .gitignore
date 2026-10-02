@@ -11,3 +11,7 @@ data/eval_report.json
 .env
 .hacp/
 .venv-sim/
+data/yolo/
+.venv-yolo/
+runs/
+!data/process/videos/*.mp4
