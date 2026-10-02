@@ -4,3 +4,4 @@
 # not pull a CUDA torch from PyPI: the already-installed CPU wheel satisfies
 # ultralytics' torch requirement.
 ultralytics>=8.3
+lap>=0.5.12

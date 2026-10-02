@@ -8,6 +8,8 @@ FROM python:3.12-slim
 ARG WITH_YOLO=1
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
+    YOLO_OFFLINE=1 \
+    YOLO_CONFIG_DIR=/tmp/Ultralytics \
     PYTHONUNBUFFERED=1
 
 # libglib2.0-0 is required by opencv (even headless); libgl1 by the
