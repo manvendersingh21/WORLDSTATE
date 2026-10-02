@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>WORLDSTATE — 3D Digital Twin (standalone demo)</title>
+<link rel="icon" href="data:," />
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -108,10 +109,13 @@
 
   <script type="module">
     import { mountTwin } from './twin.js';
+    import { mountCallouts } from './callouts.js';
 
     const container = document.getElementById('twin-container');
     const twin = mountTwin(container, { assetsBase: './assets', dataBase: './data' });
+    const callouts = mountCallouts(twin, container);
     window.__twin = twin;
+    window.__callouts = callouts;
 
     const runSelect = document.getElementById('twin-run-select');
     const playBtn = document.getElementById('twin-play');
@@ -123,13 +127,24 @@
       playBtn.dataset.playing = 'false';
       playBtn.textContent = 'Play';
       await twin.load(runId);
+
+      // Callouts need the raw per-frame data (same JSON the twin replays).
+      try {
+        const res = await fetch(`./data/${runId}.json`);
+        const run = res.ok ? await res.json() : null;
+        callouts.setRun(runId, run ? run.frames : null);
+      } catch {
+        callouts.setRun(runId, null);
+      }
+
+      let analysis = null;
       try {
         const res = await fetch(`./dev/${runId}.analysis.json`);
-        if (res.ok) twin.setAnalysis(await res.json());
-        else twin.setAnalysis(null);
-      } catch {
-        twin.setAnalysis(null);
-      }
+        if (res.ok) analysis = await res.json();
+      } catch { /* demo page runs without analysis too */ }
+      twin.setAnalysis(analysis);
+      callouts.setAnalysis(analysis);
+
       twin.setTime(0);
       scrub.max = twin.getDuration().toFixed(2);
       syncUI();
@@ -166,7 +181,46 @@
       if (playBtn.dataset.playing === 'true') syncUI();
     })();
 
-    loadRun(runSelect.value);
+    // ---- deterministic hooks for screenshots / Playwright ----
+    const nextFrames = (n = 2) => new Promise((resolve) => {
+      let left = n;
+      const step = () => (--left <= 0 ? resolve() : requestAnimationFrame(step));
+      requestAnimationFrame(step);
+    });
+
+    window.__setRun = async (runId) => {
+      runSelect.value = runId;
+      await loadRun(runId);
+      await twin.ready;
+      await nextFrames(3);
+    };
+    window.__seek = async (t) => {
+      twin.pause();
+      playBtn.dataset.playing = 'false';
+      playBtn.textContent = 'Play';
+      twin.setTime(t);
+      syncUI();
+      await nextFrames(3);
+      return twin.getTime();
+    };
+    window.__visibleCallouts = () => Array.from(
+      container.querySelectorAll('.co-card[data-visible="true"]'),
+    ).map((c) => ({
+      id: c.dataset.id,
+      kind: c.dataset.kind,
+      anchor: c.dataset.anchor,
+      status: c.dataset.status,
+      eyebrow: (c.querySelector('.co-eyebrow') || {}).textContent || '',
+      title: (c.querySelector('.co-title') || {}).textContent || '',
+      detail: (c.querySelector('.co-detail') || {}).textContent || '',
+    }));
+
+    window.__twinReady = (async () => {
+      await loadRun(runSelect.value);
+      await twin.ready;
+      await nextFrames(3);
+      return true;
+    })();
   </script>
 </body>
 </html>

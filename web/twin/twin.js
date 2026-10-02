@@ -582,6 +582,8 @@ export function mountTwin(container, options = {}) {
   let referenceData = null;  // normal episode used for the expected path
   let analysis = null;
   let currentTime = 0;
+  let currentFrame = null; // [callouts hook] interpolated frame at currentTime
+  const mix3 = (a, b, s) => [a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s, a[2] + (b[2] - a[2]) * s]; // [callouts hook]
   let playing = false;
   let loadSeq = 0;
 
@@ -634,6 +636,7 @@ export function mountTwin(container, options = {}) {
       const alpha = Math.min(Math.max(f - i0, 0), 1);
       const fa = frames[i0];
       const fb = frames[i1];
+      currentFrame = { ...fa, t: currentTime, cube_pos: mix3(fa.cube_pos, fb.cube_pos, alpha), eef_pos: mix3(fa.eef_pos, fb.eef_pos, alpha) }; // [callouts hook]
       for (let i = 0; i < LINK_ORDER.length; i++) {
         const obj = linkObjects[i];
         if (!obj) continue;
@@ -770,6 +773,18 @@ export function mountTwin(container, options = {}) {
   // ----- Render loop ---------------------------------------------------------------
   let rafId = 0;
   let lastNow = performance.now();
+  // [callouts hook] screen projection and per-frame subscription for callouts.js
+  const frameSubs = new Set();
+  const projVec = new THREE.Vector3();
+  function project(world) {
+    projVec.set(world[0], world[1], world[2]).project(camera);
+    const w = container.clientWidth || 1;
+    const h = container.clientHeight || 1;
+    return { x: (projVec.x * 0.5 + 0.5) * w, y: (projVec.y * -0.5 + 0.5) * h, visible: projVec.z > -1 && projVec.z < 1 };
+  }
+  function getFrame() { return currentFrame; }
+  function onFrame(cb) { frameSubs.add(cb); return () => frameSubs.delete(cb); }
+
   function tick(now) {
     rafId = requestAnimationFrame(tick);
     const dt = Math.min((now - lastNow) / 1000, 0.1);
@@ -786,6 +801,7 @@ export function mountTwin(container, options = {}) {
     }
     controls.update();
     renderer.render(scene, camera);
+    for (const cb of frameSubs) cb(currentTime, currentFrame); // [callouts hook]
   }
   rafId = requestAnimationFrame(tick);
 
@@ -834,6 +850,9 @@ export function mountTwin(container, options = {}) {
     setAnalysis,
     play,
     pause,
+    project,   // [callouts hook]
+    getFrame,  // [callouts hook]
+    onFrame,   // [callouts hook]
     setPreset,
     resetView,
     dispose,
