@@ -17,3 +17,5 @@ runs/
 !data/process/videos/*.mp4
 yolov8n.pt
 !docs/demo/*.mp4
+!data/process/recovery/*.mp4
+!web/recovery/*.mp4
