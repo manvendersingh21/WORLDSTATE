@@ -69,6 +69,18 @@ def main() -> None:
             page.click(f'[data-view="{name}"]')
             page.wait_for_timeout(2500 if name == "twin" else 800)
 
+        page.goto(args.url.rstrip("/") + "/static/architecture.html", wait_until="domcontentloaded")
+        page.wait_for_timeout(2500)
+        beat("Architecture: video → YOLO → unsupervised world model → novelty",
+             "Here is how it works. A fixed camera watches a repeated process. YOLO tracks the gripper, the cube, and the target in every frame. The system learns how the process should flow, without labels or rules, and scores every run: normal, novel, or known failure.", 18)
+        beat("NVIDIA Cosmos Reason explains · World memory remembers · VAST corpus",
+             "When a run fails, NVIDIA Cosmos Reason, on CoreWeave GPUs, explains it in plain language. Every run lands in memory built on SQLite and FAISS, searchable in plain words, alongside our team's VAST video corpus with its captions and detections.", 16)
+        beat("Remember → fix → the next failure is known",
+             "Here is the key loop. When an operator confirms a new failure, WORLDSTATE remembers it and learns the recovery. The next similar failure is recognized instantly, with the fix ready, all shown alongside a 3D digital twin.", 15)
+
+        beat("Why it's different: no labels, no rules, catches the first-ever failure",
+             "Why is this different? Most video AI today searches footage after the fact, or detects what someone defined in advance. That breaks on the failure nobody has seen yet. WORLDSTATE learns the normal process on its own, no labels, no rules, catches the first divergence, pinpoints when and why, and turns one confirmation into a remembered fix.", 22)
+
         page.goto(args.url, wait_until="domcontentloaded")
         page.wait_for_selector("#run-select")
         page.wait_for_timeout(2500)
@@ -76,32 +88,32 @@ def main() -> None:
         select("normal_16", "normal")
         play_video()
         beat("WORLDSTATE: physical process intelligence",
-             "This is WORLDSTATE. It watches a repeated physical process, here a robot pick-and-place cell, and learns how that process should behave, with no labels and no rulebook.", 8)
+             "This is WORLDSTATE. It watches a repeated physical process, a robot pick-and-place cell, and learns how it should behave.", 8)
         page.evaluate("() => document.querySelector('#graph')?.scrollIntoView({behavior:'smooth', block:'center'})")
         beat("Learned from 16 unlabeled robot videos",
-             "From sixteen unlabeled videos, YOLO tracks the gripper, the cube and the target, and WORLDSTATE discovers the process on its own: pickup, grasp, lift, carry, descend, place, seated.", 9)
+             "From sixteen unlabeled videos, YOLO tracks every object, and WORLDSTATE discovers the steps itself: pickup, grasp, lift, carry, descend, place, seated.", 9)
         page.evaluate("() => window.scrollTo({top: 0, behavior: 'smooth'})")
         beat("A normal run matches the learned process",
-             "This is a normal run. It follows the learned path, so it is marked NORMAL. NVIDIA Cosmos Reason, running on the event's GPU endpoint, describes what happened in plain language.", 9)
+             "This is a normal run. It follows the learned path, so it's marked normal, and NVIDIA Cosmos Reason describes it in plain language.", 9)
         view("twin")
         page.evaluate("() => window.__twin && window.__twin.setTime && window.__twin.setTime(4.0)")
         beat("The same run as a 3D digital twin",
-             "The same run can be viewed as a 3D digital twin. It replays the simulator's recorded trajectory, in sync with the camera and with WORLDSTATE's states.", 8)
+             "Here is the same run as a 3D digital twin, replaying the simulator's recorded trajectory in sync with the camera.", 8)
         view("camera")
 
         select("miss_unseen", "novel")
         play_video()
         beat("Now a run it has never seen",
-             "Now, a run WORLDSTATE has never seen. Watch the cube right after the gripper lines up.", 6)
+             "Now, a run WORLDSTATE has never seen. Watch the cube after the gripper lines up.", 6)
         beat("NOVEL FAILURE at 1.904 seconds",
-             "At one point nine zero four seconds, reality diverges. The cube shifts sideways after alignment. WORLDSTATE flags a NOVEL FAILURE: it expected grasping, it observed the cube sliding sideways, and that transition appeared in zero of sixteen reference runs.", 12)
+             "At one point nine zero four seconds, the cube shifts sideways. WORLDSTATE flags a novel failure: it expected a grasp, saw a slide, a pattern seen in zero of sixteen runs.", 12)
         beat("Cosmos Reason explains the failure",
-             "Cosmos Reason explains it: the gripper closes, but the cube has already moved, so the grasp misses and nothing reaches the target.", 8)
+             "Cosmos Reason explains it: the cube has already moved, so the grasp misses and nothing reaches the target.", 8)
         view("twin")
         page.evaluate("() => window.__twin && window.__twin.setTime && window.__twin.setTime(2.3)")
         page.wait_for_timeout(1200)
         beat("In 3D: the cube displaced 4.5 cm, the gripper still targeting the old position",
-             "In the digital twin, the callouts show exactly what went wrong: the cube was displaced four and a half centimeters, while the gripper kept targeting the original position.", 9)
+             "In the digital twin, the cube sits four and a half centimeters away, while the gripper still targets the old position.", 9)
         page.evaluate("() => window.__twin && window.__twin.setTime && window.__twin.setTime(3.6)")
         beat("The gripper closes on empty air",
              "Then the gripper closes on empty air. The cube is never lifted.", 6)
@@ -110,13 +122,13 @@ def main() -> None:
         page.click("#remember-btn")
         page.wait_for_function("() => document.querySelector('#status-badge')?.dataset.status === 'known_failure'", timeout=60000)
         beat("Remember this failure: added to world memory",
-             "One click: remember this failure. The pattern is added to WORLDSTATE's world memory, and the learned graph gets a new, named branch: displaced after alignment.", 9)
+             "One click: remember this failure. It's added to world memory, and the graph gets a new branch: displaced after alignment.", 9)
         beat("The fix: a recovery plan from memory",
-             "Because it now knows this failure, WORLDSTATE also knows the fix: re-align to where the cube actually is, then grasp, lift, carry and place.", 8)
+             "Because it knows this failure, WORLDSTATE knows the fix: re-align to the cube's real position, then grasp and place.", 8)
         if page.locator("#fix-play-btn").count():
             page.click("#fix-play-btn")
             beat("Corrected attempt: re-aligned, grasped, placed",
-                 "Here is the corrected attempt in the same simulated cell, with the same four and a half centimeter shift. The robot re-aligns to the moved cube and grasps it.", 6)
+                 "Here is the corrected attempt, simulated: the robot re-aligns to the cube and grasps it.", 6)
             view("twin")
             page.evaluate("() => { const v = document.querySelector('#video'); if (v) { v.currentTime = 4.5; v.play(); } }")
             beat("The next attempt passes",
@@ -132,7 +144,7 @@ def main() -> None:
         select("miss_eval_right", "known_failure")
         play_video()
         beat("Next time: a different miss, recognized instantly",
-             "And the next time a similar failure happens, here a different run it has never seen, WORLDSTATE recognizes it instantly as a KNOWN FAILURE, and the fix is ready.", 10)
+             "The next time something similar happens, in a run it has never seen, WORLDSTATE recognizes it instantly as a known failure, and the fix is ready.", 10)
 
         page.fill("#search-input", "show me failed grasps")
         page.press("#search-input", "Enter")
@@ -144,12 +156,12 @@ def main() -> None:
         page.goto(args.url.rstrip("/") + "/static/vast/index.html", wait_until="domcontentloaded")
         page.wait_for_timeout(2500)
         beat("Our team's VAST corpus: Cosmos captions + YOLO11 detections",
-             "We also pulled our team's footage from the VAST video index, with the VAST pipeline's own Cosmos captions and YOLO detections, searchable in the same interface.", 9)
+             "We also connected our team's VAST video corpus, with its Cosmos captions and YOLO detections, searchable in the same interface.", 9)
         page.goto(args.url, wait_until="domcontentloaded")
         page.wait_for_selector("#run-select")
         page.wait_for_timeout(1500)
         beat("WORLDSTATE: learns the process, catches the first failure, remembers the fix",
-             "WORLDSTATE learns how a physical process should behave, catches the first time reality diverges, and remembers the fix. For factories, warehouses and labs: one camera that learns.", 9)
+             "WORLDSTATE learns how a process should behave, catches the first divergence, and remembers the fix. Factories, warehouses, labs: one camera that learns.", 9)
         page.evaluate(CAPTION_JS, "")
         page.wait_for_timeout(800)
         ctx.close()
@@ -166,6 +178,15 @@ def main() -> None:
         lines.append(f"| {int(start // 60)}:{start % 60:04.1f} | {caption} | {voice} |")
     lines += ["", "## Full narration (one block)", "", " ".join(v for _, _, v in beats)]
     SCRIPT.write_text("\n".join(lines) + "\n")
+    import json
+    entries = []
+    for i, (start, caption, voice) in enumerate(beats):
+        end = beats[i + 1][0] if i + 1 < len(beats) else start + 9.0
+        entries.append({"index": i + 1, "start_s": round(start, 2), "end_s": round(end, 2),
+                        "on_screen": caption, "voiceover": voice})
+    (SCRIPT.parent / "voiceover-transcript.json").write_text(json.dumps(
+        {"video": f"docs/demo/{OUT.name}", "segments": entries,
+         "full_text": " ".join(v for _, _, v in beats)}, indent=2))
     print("wrote", OUT, "and", SCRIPT)
 
 

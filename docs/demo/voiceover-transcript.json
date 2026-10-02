@@ -1,0 +1,133 @@
+{
+  "video": "docs/demo/worldstate-voiceover.mp4",
+  "duration_s": 166.0,
+  "segments": [
+    {
+      "start_s": 2.9,
+      "on_screen": "WORLDSTATE: physical process intelligence",
+      "voiceover": "This is WORLDSTATE. It watches a repeated physical process, here a robot pick-and-place cell, and learns how that process should behave, with no labels and no rulebook.",
+      "index": 1,
+      "end_s": 10.9
+    },
+    {
+      "start_s": 10.9,
+      "on_screen": "Learned from 16 unlabeled robot videos",
+      "voiceover": "From sixteen unlabeled videos, YOLO tracks the gripper, the cube and the target, and WORLDSTATE discovers the process on its own: pickup, grasp, lift, carry, descend, place, seated.",
+      "index": 2,
+      "end_s": 20.2
+    },
+    {
+      "start_s": 20.2,
+      "on_screen": "A normal run matches the learned process",
+      "voiceover": "This is a normal run. It follows the learned path, so it is marked NORMAL. NVIDIA Cosmos Reason, running on the event's GPU endpoint, describes what happened in plain language.",
+      "index": 3,
+      "end_s": 31.8
+    },
+    {
+      "start_s": 31.8,
+      "on_screen": "The same run as a 3D digital twin",
+      "voiceover": "The same run can be viewed as a 3D digital twin. It replays the simulator's recorded trajectory, in sync with the camera and with WORLDSTATE's states.",
+      "index": 4,
+      "end_s": 40.7
+    },
+    {
+      "start_s": 40.7,
+      "on_screen": "Now a run it has never seen",
+      "voiceover": "Now, a run WORLDSTATE has never seen. Watch the cube right after the gripper lines up.",
+      "index": 5,
+      "end_s": 46.7
+    },
+    {
+      "start_s": 46.7,
+      "on_screen": "NOVEL FAILURE at 1.904 seconds",
+      "voiceover": "At one point nine zero four seconds, reality diverges. The cube shifts sideways after alignment. WORLDSTATE flags a NOVEL FAILURE: it expected grasping, it observed the cube sliding sideways, and that transition appeared in zero of sixteen reference runs.",
+      "index": 6,
+      "end_s": 58.7
+    },
+    {
+      "start_s": 58.7,
+      "on_screen": "Cosmos Reason explains the failure",
+      "voiceover": "Cosmos Reason explains it: the gripper closes, but the cube has already moved, so the grasp misses and nothing reaches the target.",
+      "index": 7,
+      "end_s": 70.4
+    },
+    {
+      "start_s": 70.4,
+      "on_screen": "In 3D: the cube displaced 4.5 cm, the gripper still targeting the old position",
+      "voiceover": "In the digital twin, the callouts show exactly what went wrong: the cube was displaced four and a half centimeters, while the gripper kept targeting the original position.",
+      "index": 8,
+      "end_s": 79.4
+    },
+    {
+      "start_s": 79.4,
+      "on_screen": "The gripper closes on empty air",
+      "voiceover": "Then the gripper closes on empty air. The cube is never lifted.",
+      "index": 9,
+      "end_s": 86.4
+    },
+    {
+      "start_s": 86.4,
+      "on_screen": "Remember this failure: added to world memory",
+      "voiceover": "One click: remember this failure. The pattern is added to WORLDSTATE's world memory, and the learned graph gets a new, named branch: displaced after alignment.",
+      "index": 10,
+      "end_s": 95.4
+    },
+    {
+      "start_s": 95.4,
+      "on_screen": "The fix: a recovery plan from memory",
+      "voiceover": "Because it now knows this failure, WORLDSTATE also knows the fix: re-align to where the cube actually is, then grasp, lift, carry and place.",
+      "index": 11,
+      "end_s": 103.4
+    },
+    {
+      "start_s": 103.4,
+      "on_screen": "Corrected attempt: re-aligned, grasped, placed",
+      "voiceover": "Here is the corrected attempt in the same simulated cell, with the same four and a half centimeter shift. The robot re-aligns to the moved cube and grasps it.",
+      "index": 12,
+      "end_s": 111.9
+    },
+    {
+      "start_s": 111.9,
+      "on_screen": "The next attempt passes",
+      "voiceover": "It lifts the cube, carries it, and places it on the target. The next attempt passes.",
+      "index": 13,
+      "end_s": 119.8
+    },
+    {
+      "start_s": 119.8,
+      "on_screen": "Next attempt passes: placed on target",
+      "voiceover": "Placed on target.",
+      "index": 14,
+      "end_s": 122.8
+    },
+    {
+      "start_s": 122.8,
+      "on_screen": "Next time: a different miss, recognized instantly",
+      "voiceover": "And the next time a similar failure happens, here a different run it has never seen, WORLDSTATE recognizes it instantly as a KNOWN FAILURE, and the fix is ready.",
+      "index": 15,
+      "end_s": 134.4
+    },
+    {
+      "start_s": 134.4,
+      "on_screen": "Search world memory in plain language",
+      "voiceover": "Everything goes into world memory. Ask it in plain language, show me failed grasps, and it returns the failures.",
+      "index": 16,
+      "end_s": 144.9
+    },
+    {
+      "start_s": 144.9,
+      "on_screen": "Our team's VAST corpus: Cosmos captions + YOLO11 detections",
+      "voiceover": "We also pulled our team's footage from the VAST video index, with the VAST pipeline's own Cosmos captions and YOLO detections, searchable in the same interface.",
+      "index": 17,
+      "end_s": 155.5
+    },
+    {
+      "start_s": 155.5,
+      "on_screen": "WORLDSTATE: learns the process, catches the first failure, remembers the fix",
+      "voiceover": "WORLDSTATE learns how a physical process should behave, catches the first time reality diverges, and remembers the fix. For factories, warehouses and labs: one camera that learns.",
+      "index": 18,
+      "end_s": 166.0
+    }
+  ],
+  "full_text": "This is WORLDSTATE. It watches a repeated physical process, here a robot pick-and-place cell, and learns how that process should behave, with no labels and no rulebook. From sixteen unlabeled videos, YOLO tracks the gripper, the cube and the target, and WORLDSTATE discovers the process on its own: pickup, grasp, lift, carry, descend, place, seated. This is a normal run. It follows the learned path, so it is marked NORMAL. NVIDIA Cosmos Reason, running on the event's GPU endpoint, describes what happened in plain language. The same run can be viewed as a 3D digital twin. It replays the simulator's recorded trajectory, in sync with the camera and with WORLDSTATE's states. Now, a run WORLDSTATE has never seen. Watch the cube right after the gripper lines up. At one point nine zero four seconds, reality diverges. The cube shifts sideways after alignment. WORLDSTATE flags a NOVEL FAILURE: it expected grasping, it observed the cube sliding sideways, and that transition appeared in zero of sixteen reference runs. Cosmos Reason explains it: the gripper closes, but the cube has already moved, so the grasp misses and nothing reaches the target. In the digital twin, the callouts show exactly what went wrong: the cube was displaced four and a half centimeters, while the gripper kept targeting the original position. Then the gripper closes on empty air. The cube is never lifted. One click: remember this failure. The pattern is added to WORLDSTATE's world memory, and the learned graph gets a new, named branch: displaced after alignment. Because it now knows this failure, WORLDSTATE also knows the fix: re-align to where the cube actually is, then grasp, lift, carry and place. Here is the corrected attempt in the same simulated cell, with the same four and a half centimeter shift. The robot re-aligns to the moved cube and grasps it. It lifts the cube, carries it, and places it on the target. The next attempt passes. Placed on target. And the next time a similar failure happens, here a different run it has never seen, WORLDSTATE recognizes it instantly as a KNOWN FAILURE, and the fix is ready. Everything goes into world memory. Ask it in plain language, show me failed grasps, and it returns the failures. We also pulled our team's footage from the VAST video index, with the VAST pipeline's own Cosmos captions and YOLO detections, searchable in the same interface. WORLDSTATE learns how a physical process should behave, catches the first time reality diverges, and remembers the fix. For factories, warehouses and labs: one camera that learns."
+}

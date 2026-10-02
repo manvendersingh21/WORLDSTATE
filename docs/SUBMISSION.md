@@ -79,3 +79,37 @@ Built with HACP agent pairs in separate git worktrees: SIM (codex hit its quota;
 - Boot takes about 6 minutes on a laptop CPU (the graph is learned from video at startup). Relearn/reset is an operator command (`POST /api/learn` locally); the Learn button is hidden in the judge UI.
 
 **VAST corpus view** (`/static/vast/`, linked from the header): 40 clips from our team's VAST VSS index (`sdg_warehouse_cam-2`), exported on the workshop VM with `scripts/vss_export.py`, shown with the VAST pipeline's own Cosmos Reason captions and YOLO11 detections and searchable from the page. The footage is served by the demo but not committed to this public repo.
+
+## Technical architecture
+
+Live diagram: `/static/architecture.html` on the demo link (source: `web/architecture.html`).
+
+```
+fixed-camera video (robosuite Lift, 20 fps)
+  -> YOLOv8n (fine-tuned on reference runs) + Ultralytics tracking: gripper / cube / target
+  -> sliding-window kinematic features -> clustering -> unsupervised state graph (16 runs, no labels)
+  -> novelty = transition surprise + embedding distance + trajectory abnormality -> NORMAL / NOVEL / KNOWN + divergence time
+  -> NVIDIA Cosmos Reason (event Cosmos3 endpoint on CoreWeave GPUs): narration from video + verdict + tracker facts
+  -> world memory: SQLite + FAISS (hybrid search); optional VastDB mirror; VAST VSS corpus view
+  -> Remember: failure prototype + graph branch + recovery path -> next miss KNOWN, corrected attempt replayed
+  -> FastAPI + Judge Mode UI (Three.js 3D twin of the Panda cell) -> Docker -> Cloudflare tunnel
+```
+
+## Setup
+
+```bash
+git clone https://github.com/manvendersingh21/WORLDSTATE && cd WORLDSTATE
+cp .env.example .env 2>/dev/null || touch .env   # add COSMOS_BASE_URL + COSMOS_API_KEY (or NVIDIA_API_KEY)
+make deploy            # Docker: learns the graph from video at boot (~6 min CPU), serves 0.0.0.0:8000
+scripts/tunnel.sh      # optional public https link (cloudflared)
+# reset after a demo that clicked Remember:
+curl -X POST http://127.0.0.1:8000/api/learn
+```
+Regenerate data: `make process` (robosuite), `make yolo` (detector), `python scripts/gen_recovery.py` (corrected attempt).
+
+## Lessons learned
+
+- **The data must match the idea.** Unsupervised process learning needs one camera on a repeated process; randomized or open-floor footage (Exylos, the VAST warehouse clips) does not form a stable graph, so we generated a physics-simulated cell and reported the VAST run honestly.
+- **Keep the verdict and the words separate.** The graph decides NORMAL / NOVEL / KNOWN; Cosmos only explains. Feeding Cosmos the tracker's facts made its narration far more accurate.
+- **Optional integrations must fail fast.** An unreachable VastDB endpoint with SDK retries made "Remember" take 60 s until we disabled it; the local SQLite + FAISS path stayed the source of truth.
+- **Static UI hot-swaps kept the public demo stable** while many agent pairs (HACP, separate git worktrees, counterparty-verified tests) built the UI, 3D twin, assets and tests in parallel.
