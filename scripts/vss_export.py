@@ -12,6 +12,7 @@ import glob
 import json
 import os
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
@@ -47,8 +48,29 @@ def main() -> None:
     base = env["INGRESS_URL"].rstrip("/")
     token = call(base, "/api/v1/auth/login", body={"username": env["USERNAME"], "password": env["PASSWORD"]})["access_token"]
     filters = {"camera_id": camera} if camera else {}
-    hits = call(base, "/api/v1/search", token, {"query": query, "top_k": min(count, 100), "llm_top_n": 0,
-                                                 "min_similarity": 0.0, "metadata_filters": filters})
+    attempts = [
+        {"query": query, "top_k": min(count, 100), "llm_top_n": 1, "min_similarity": 0.1, "metadata_filters": filters},
+        {"query": query, "top_k": min(count, 100), "metadata_filters": filters},
+        {"query": query, "top_k": min(count, 100)},
+        {"query": query},
+    ]
+    hits = None
+    for body in attempts:
+        try:
+            hits = call(base, "/api/v1/search", token, body)
+            print("search ok with fields:", sorted(body))
+            break
+        except urllib.error.HTTPError as exc:
+            print("search", exc.code, "fields", sorted(body), "->", exc.read().decode(errors="replace")[:400])
+    if hits is None:
+        raise SystemExit("search failed for every request shape; paste the lines above")
+    results = hits.get("results") or []
+    if camera and not any(camera in json.dumps(r) for r in results[:5]):
+        print("note: camera filter not applied by backend; keeping results that mention", camera, "if any")
+        matched = [r for r in results if camera in json.dumps(r)]
+        results = matched or results
+    hits["results"] = results
+    print(len(results), "hits")
     out = Path.home() / "worldstate_vss_export"
     (out / "videos").mkdir(parents=True, exist_ok=True)
     manifest = {"source": "VAST VSS team index", "query": query, "camera_id": camera, "clips": []}
