@@ -16,17 +16,25 @@ def run_facts(series: dict) -> dict:
     speed = np.asarray(series["obj_speed"], dtype=float)
     dist_go = np.asarray(series["dist_go"], dtype=float)
     dist_ob = np.asarray(series["dist_ob"], dtype=float)
-    base = float(np.median(lift[: max(3, len(lift) // 10)]))
-    rise = float(np.max(lift) - base) if len(lift) else 0.0
+    # Smoothing is zero-padded, so the first and last samples are not real positions.
+    settle = 3 if len(lift) > 12 else 0
+    core = lift[settle : len(lift) - settle] if settle else lift
+    base = float(np.median(core[: max(3, len(core) // 10)])) if len(core) else 0.0
+    rise = float(np.max(core) - base) if len(core) else 0.0
     lifted = rise > 0.05
-    # The part moving fast while the gripper is not on it: an unexpected shift.
-    away = dist_go > np.percentile(dist_go, 25) if len(dist_go) else np.zeros(0, bool)
-    jumps = np.where((speed > 0.25) & away)[0]
-    shift_t = float(time[jumps[0]]) if len(jumps) else None
-    early = time < 0.5 * float(time[-1]) if len(time) else np.zeros(0, bool)
-    if shift_t is not None and not early[jumps[0]]:
-        shift_t = None
-    tail = dist_ob[int(len(dist_ob) * 0.85):] if len(dist_ob) else np.zeros(1)
+    # An unexpected shift: the part jumps while resting on the surface and is still not
+    # lifted a second later. When the gripper lifts a part, the jump is followed by a rise.
+    fps = float(series["fps"][0]) if "fps" in series else 20.0
+    hold = max(1, int(round(fps)))
+    shift_t = None
+    for i in np.where(speed > 0.15)[0]:
+        if i < settle:
+            continue
+        window = lift[i : i + hold]
+        if lift[i] - base < 0.02 and len(window) and np.max(window) - base < 0.02:
+            shift_t = float(time[i])
+            break
+    tail = dist_ob[int(len(dist_ob) * 0.85) : len(dist_ob) - settle] if len(dist_ob) > 12 else dist_ob
     on_target = bool(np.median(tail) < 0.06)
     return {"lifted": lifted, "rise": rise, "shift_t": shift_t, "ends_on_target": on_target}
 

@@ -126,6 +126,8 @@ def failure_signature(series: dict) -> np.ndarray:
     lateral = float(np.percentile(np.abs(series["obj_vx"][late]), 90))
     # The miss lands beside the fixture. Normals end centered on it.
     outside = 1.0 if off > 0.09 and lift < 0.08 else 0.0
+    # Saturate once the part is clearly off target: a miss to either side is the same failure.
+    off, dist = min(off, 0.135), min(dist, 0.135)
     return np.array([off / 0.03, dist / 0.05, outside * 3.0, lateral / 0.05, (1.0 if lift < 0.08 else 0.0)])
 
 

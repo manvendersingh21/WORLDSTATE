@@ -1,0 +1,264 @@
+{
+  "train_config": {
+    "base_weights": "yolov8n.pt",
+    "model": "yolov8n",
+    "imgsz": 480,
+    "epochs": 20,
+    "batch": 16,
+    "seed": 0,
+    "device": "mps",
+    "frame_stride": 3,
+    "val_frame_stride": 3,
+    "class_names": [
+      "gripper",
+      "part",
+      "fixture"
+    ],
+    "train_episodes": [
+      "normal_00",
+      "normal_01",
+      "normal_02",
+      "normal_03",
+      "normal_04",
+      "normal_05",
+      "normal_06",
+      "normal_07",
+      "normal_08",
+      "normal_09",
+      "normal_10",
+      "normal_11",
+      "normal_12"
+    ],
+    "val_episodes": [
+      "normal_13",
+      "normal_14",
+      "normal_15"
+    ],
+    "train_images": 780,
+    "val_images": 180,
+    "augment": {
+      "hsv_h": 0.015,
+      "hsv_s": 0.5,
+      "hsv_v": 0.35,
+      "degrees": 0.0,
+      "translate": 0.18,
+      "scale": 0.45,
+      "shear": 0.0,
+      "perspective": 0.0,
+      "flipud": 0.0,
+      "fliplr": 0.5,
+      "mosaic": 1.0,
+      "mixup": 0.0,
+      "erasing": 0.0
+    },
+    "train_seconds": 365.0,
+    "weights_mb": 6.22,
+    "label_source": "simulator ground truth, detector supervision only"
+  },
+  "val": {
+    "map50": 0.995,
+    "map50_95": 0.9428,
+    "precision": 0.9994,
+    "recall": 1.0,
+    "per_class": {
+      "gripper": {
+        "map50": 0.995,
+        "precision": 0.9993,
+        "recall": 1.0
+      },
+      "part": {
+        "map50": 0.995,
+        "precision": 0.9997,
+        "recall": 1.0
+      },
+      "fixture": {
+        "map50": 0.995,
+        "precision": 0.9991,
+        "recall": 1.0
+      }
+    }
+  },
+  "test_tracking": {
+    "note": "Measured through worldstate.perception.yolo_track on split==test episodes, which were never trained on. detection_rate is the fraction of frames whose track output carries that label; median_center_error_w is the median distance between predicted and ground-truth box centers in units of image width.",
+    "episodes": {
+      "miss_eval_left": {
+        "frames": 180,
+        "per_class": {
+          "gripper": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0014,
+            "median_iou": 0.9423
+          },
+          "part": {
+            "detection_rate": 0.9889,
+            "median_center_error_w": 0.0006,
+            "median_iou": 0.9547
+          },
+          "fixture": {
+            "detection_rate": 0.9556,
+            "median_center_error_w": 0.0001,
+            "median_iou": 0.9857
+          }
+        }
+      },
+      "miss_eval_right": {
+        "frames": 180,
+        "per_class": {
+          "gripper": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0017,
+            "median_iou": 0.9378
+          },
+          "part": {
+            "detection_rate": 0.9889,
+            "median_center_error_w": 0.0005,
+            "median_iou": 0.9713
+          },
+          "fixture": {
+            "detection_rate": 0.9778,
+            "median_center_error_w": 0.0002,
+            "median_iou": 0.9894
+          }
+        }
+      },
+      "miss_similar": {
+        "frames": 180,
+        "per_class": {
+          "gripper": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0014,
+            "median_iou": 0.9422
+          },
+          "part": {
+            "detection_rate": 0.9778,
+            "median_center_error_w": 0.0005,
+            "median_iou": 0.952
+          },
+          "fixture": {
+            "detection_rate": 0.9889,
+            "median_center_error_w": 0.0001,
+            "median_iou": 0.9873
+          }
+        }
+      },
+      "miss_unseen": {
+        "frames": 180,
+        "per_class": {
+          "gripper": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0014,
+            "median_iou": 0.949
+          },
+          "part": {
+            "detection_rate": 0.9778,
+            "median_center_error_w": 0.0008,
+            "median_iou": 0.9323
+          },
+          "fixture": {
+            "detection_rate": 0.9889,
+            "median_center_error_w": 0.0002,
+            "median_iou": 0.9885
+          }
+        }
+      },
+      "normal_16": {
+        "frames": 180,
+        "per_class": {
+          "gripper": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0009,
+            "median_iou": 0.9621
+          },
+          "part": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0006,
+            "median_iou": 0.9564
+          },
+          "fixture": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0001,
+            "median_iou": 0.9837
+          }
+        }
+      },
+      "normal_17": {
+        "frames": 180,
+        "per_class": {
+          "gripper": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.001,
+            "median_iou": 0.9568
+          },
+          "part": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0006,
+            "median_iou": 0.9141
+          },
+          "fixture": {
+            "detection_rate": 0.9778,
+            "median_center_error_w": 0.0002,
+            "median_iou": 0.9853
+          }
+        }
+      },
+      "normal_18": {
+        "frames": 180,
+        "per_class": {
+          "gripper": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.001,
+            "median_iou": 0.9585
+          },
+          "part": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0006,
+            "median_iou": 0.9573
+          },
+          "fixture": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0001,
+            "median_iou": 0.985
+          }
+        }
+      },
+      "normal_19": {
+        "frames": 180,
+        "per_class": {
+          "gripper": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0009,
+            "median_iou": 0.9612
+          },
+          "part": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0004,
+            "median_iou": 0.9612
+          },
+          "fixture": {
+            "detection_rate": 1.0,
+            "median_center_error_w": 0.0001,
+            "median_iou": 0.9881
+          }
+        }
+      }
+    },
+    "overall": {
+      "gripper": {
+        "detection_rate": 1.0,
+        "median_center_error_w": 0.0011,
+        "median_iou": 0.9542
+      },
+      "part": {
+        "detection_rate": 0.9917,
+        "median_center_error_w": 0.0006,
+        "median_iou": 0.9522
+      },
+      "fixture": {
+        "detection_rate": 0.9861,
+        "median_center_error_w": 0.0002,
+        "median_iou": 0.9866
+      }
+    },
+    "total_frames": 1440
+  }
+}
