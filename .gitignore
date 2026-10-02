@@ -16,3 +16,4 @@ data/yolo/
 runs/
 !data/process/videos/*.mp4
 yolov8n.pt
+!docs/demo/*.mp4

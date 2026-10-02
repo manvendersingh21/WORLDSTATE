@@ -1,0 +1,75 @@
+# WORLDSTATE
+
+**Pitch:** Watch a repeated physical process once, learn its state graph with no labels or SOP, then tell you when and why a run goes wrong in a way it has never seen. Confirm it once and the next one is recognized.
+
+Real-Time Video Agents Hack (VAST / NVIDIA), SF, Oct 2 2026.
+
+TEAM MEMBERS: <name> — <email>
+
+## Links
+
+- Repo: https://github.com/manvendersingh21/WORLDSTATE
+- Live demo: https://calgary-postings-shoot-genealogy.trycloudflare.com (Cloudflare quick tunnel from a laptop running the Docker image; the URL changes if the tunnel restarts)
+- Demo video: `docs/demo/worldstate-demo.mp4`
+
+## What it does (judge flow)
+
+1. Learns a 7-state process graph from 16 unlabeled normal runs: At pickup, Grasping part, Lifting part, Carrying part, Descending, Placing part, Seated in fixture (16/16 reference runs follow this path).
+2. Shows NORMAL, NOVEL FAILURE or KNOWN FAILURE badges per run, with a timestamp.
+3. On `miss_unseen` (the cube is moved sideways right after the gripper aligns, so the grasp closes on air) it flags a novel transition at 1.9 s, with expected vs observed transition and support: seen in 0/16 reference runs.
+4. **Why** explains the verdict from the graph; **What happened** is narrated by NVIDIA Cosmos Reason, with a source badge.
+5. Shows the expected path and the recovery path.
+6. Memory search takes plain questions; "show me failed grasps" returns the miss runs (hybrid FAISS + keyword search over text derived from each run's tracks and verdict).
+7. "Remember this failure" adds class `displaced_after_align` and bumps the world model to v2. Left and right misses then come back as known failures; normals stay normal.
+8. "Upload similar run" sends a similar miss through the real upload endpoint and returns KNOWN FAILURE.
+
+## How it works
+
+```
+robosuite video (fixed camera, simulated)
+  -> YOLOv8n detect + Ultralytics tracking (gripper / part / fixture)
+  -> sliding-window kinematic features
+  -> unsupervised state graph (clustering, ordered transitions)
+  -> novelty = transition surprise + embedding distance + trajectory abnormality
+  -> memory: SQLite + FAISS  (VastDB mirror optional, not live)
+  -> Cosmos Reason narration (verdict + tracker facts + video at 4 fps)
+  -> web UI
+```
+
+Box labels train the detector only; the state graph gets no labels. Cosmos writes the narration and names states; it never sets state boundaries or the verdict.
+
+## Sponsor integrations
+
+- **NVIDIA:** Cosmos Reason runs live through the event's Cosmos3 endpoint (model discovered from `/v1/models`: `nvidia/cosmos3-nano-reasoner`). Fallbacks: hosted `integrate.api.nvidia.com` with an NVIDIA API key, else kinematic text. Ultralytics YOLO does detection and tracking. Before the demo, the operator pre-generated narrations for the demo runs and kept ones consistent with the tracker's facts (cached per run and version).
+- **VAST:** an optional VastDB mirror (`vastdb` SDK, table `worldstate.runs`) is implemented but not used live. Tested from the laptop with team-2 credentials, the VastDB endpoint is workshop-internal and does not resolve outside the VM network (DNS failure). The live demo uses local SQLite + FAISS. Making it reachable needs an SSH tunnel via the workshop VM jump host.
+- **CoreWeave:** hosts the GPUs behind the event's Cosmos endpoint. The WORLDSTATE app itself runs on CPU. W&B is not used.
+
+## Results
+
+| Measure | Result |
+| --- | --- |
+| Data | 20 normal runs (16 reference, 4 held out) + 4 misses, 480x360, 20 fps, 9 s clips, simulated |
+| Detector (YOLOv8n, val) | mAP50 0.995 |
+| Held-out test runs | detection rate >= 0.955 per class; median center error < 0.2% of image width |
+| Graph | 7 states, one path, 16/16 reference runs |
+| Novelty AUROC (YOLO tracks) | 1.00 |
+| Held-out normals | score <= 0.07 |
+| Misses | score >= 0.90 |
+| `miss_unseen` | diverges at 1.9 s; transition seen in 0/16 reference runs |
+| Memory check | after remembering one miss, left and right misses are known failures; normals stay normal |
+
+Eval: `python -m worldstate.eval_novelty`. Detector metrics: `models/yolo_metrics.json`.
+
+## Tools
+
+robosuite / MuJoCo (CPU), YOLOv8n + Ultralytics tracking, scikit-learn clustering (HDBSCAN / k-means), FAISS, SQLite, FastAPI, NVIDIA Cosmos Reason, optional vastdb, Docker (python:3.12-slim, CPU torch), Cloudflare quick tunnel (cloudflared).
+
+Built with HACP agent pairs in separate git worktrees: SIM (codex hit its quota; Claude finished the generator; Claude Sonnet validator), DEPLOY (opencode GLM-5.3 Dockerfile; agy Gemini 3.8 Flash entrypoint and run script), PERCEPTION (Cursor Claude Opus 5 trainer; agy Gemini 3.1 Pro tracking tests), VAST diagnostic (Cursor GPT-5.3 Codex script; agy Gemini Flash report). Claude Opus 5.5 integrated on main.
+
+## Known limitations
+
+- The video is simulated (robosuite), not real camera footage. The scripted policy is open loop and the failure is a teleported cube.
+- VAST is not used live: the VastDB endpoint is not reachable from the laptop.
+- Cosmos narrations for the demo runs were pre-generated and curated by the operator.
+- The public URL is tied to a Cloudflare quick tunnel on a laptop and changes if the tunnel restarts.
+- Boot takes about 6 minutes on a laptop CPU (the graph is learned from video at startup). Relearn/reset is an operator command (`POST /api/learn` locally); the Learn button is hidden in the judge UI.
