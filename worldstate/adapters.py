@@ -42,11 +42,14 @@ class TextEmbedder:
         if self._model is None:
             from sklearn.feature_extraction.text import HashingVectorizer
 
+            # Character n-grams so "grasps" still meets "grasp" and "moved" meets "move".
+            self.dim = 1024
             self._hash = HashingVectorizer(
                 n_features=self.dim,
                 alternate_sign=False,
                 norm="l2",
-                ngram_range=(1, 2),
+                analyzer="char_wb",
+                ngram_range=(3, 5),
             )
 
     def embed(self, texts: list[str]) -> np.ndarray:

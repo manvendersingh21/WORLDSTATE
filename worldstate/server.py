@@ -18,6 +18,7 @@ from worldstate.config import MODEL_DIR, TRACKS_DIR, UPLOAD_DIR, WEB_DIR
 from worldstate.engine import WorldModel
 from worldstate.learn import learn_model
 from worldstate.memory import MemoryStore
+from worldstate.narrative import describe_run
 from worldstate.perception import perceive, tracks_for
 from worldstate.series import series_from_tracks, series_from_video_flow
 
@@ -221,8 +222,10 @@ def remember(episode_id: str, body: RememberBody):
     with _lock:
         result = _model.remember(episode_id, _series(ep), label, detail)
         _memory.add_rule(result["version"], result["rule"])
-        _memory.add_episode(episode_id, " ".join(ev["action"] for ev in detail["events"]), ep["role"], label, detail["events"])
+        series = _series(ep)
         _cache.clear()
+        after = _analyze(episode_id)
+        _memory.add_episode(episode_id, describe_run(episode_id, after, series, label), ep["role"], label, after["events"])
     return {"remembered": result, "analysis": _analyze(episode_id), "model": _model.public()}
 
 
@@ -258,7 +261,8 @@ def _ingest(path: Path, episode_id: str) -> dict:
     _model.save()
     _cache.clear()
     detail = _analyze(episode_id)
-    _memory.add_episode(episode_id, " ".join(ev["action"] for ev in detail["events"]), "upload", detail["status"], detail["events"])
+    text = describe_run(episode_id, detail, series_from_tracks(tracks), detail.get("known_class"))
+    _memory.add_episode(episode_id, text, "upload", detail["status"], detail["events"])
     return {"episode": episode, "analysis": detail}
 
 

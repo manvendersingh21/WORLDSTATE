@@ -20,6 +20,7 @@ from worldstate.dataset import (
 )
 from worldstate.engine import WorldModel, apply_cosmos_events, apply_cosmos_names
 from worldstate.memory import MemoryStore
+from worldstate.narrative import describe_run
 from worldstate.perception import perception_mode, tracks_for
 from worldstate.series import series_from_tracks, series_from_video_flow
 from worldstate.synthetic import ensure_dataset
@@ -161,6 +162,21 @@ def _maybe_cosmos(model: WorldModel, episodes: list[dict], series_of: dict[str, 
         model.payload["transcripts"] = transcripts
 
 
+def _memory_texts(model: WorldModel, episodes: list[dict], series_of: dict[str, dict]) -> dict[str, str]:
+    """Every listed run, described from its own analysis; Cosmos transcripts are appended when present."""
+    cosmos_text = model.payload.get("transcripts", {})
+    texts = {}
+    for ep in episodes:
+        if not ep.get("listed", True):
+            continue
+        detail = model.analyze_series(ep["id"], series_of[ep["id"]])
+        text = describe_run(ep["id"], detail, series_of[ep["id"]])
+        if ep["id"] in cosmos_text:
+            text += " Cosmos: " + cosmos_text[ep["id"]]
+        texts[ep["id"]] = text
+    return texts
+
+
 def learn_model() -> WorldModel:
     """WORLDSTATE_DATASET: process (default when present), synthetic, or real (Exylos-style clips)."""
     mode = os.environ.get("WORLDSTATE_DATASET", "auto").strip() or "auto"
@@ -243,7 +259,7 @@ def learn_model() -> WorldModel:
     print("threshold", round(chosen.payload["threshold"], 3), "train max", round(chosen.payload["train_score_max"], 3))
     chosen.save()
     memory = MemoryStore()
-    memory.rebuild(chosen.payload.get("transcripts", {}), chosen.payload["episodes"])
+    memory.rebuild(_memory_texts(chosen, episodes, series_of), chosen.payload["episodes"])
     chosen.payload["adapters"]["text_embedder"] = memory.embedder.mode
     chosen.payload["adapters"]["vector_index"] = memory.index.backend
     chosen.payload["adapters"]["vast"] = memory.vast.enabled

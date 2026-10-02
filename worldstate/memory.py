@@ -12,6 +12,15 @@ from worldstate.adapters import TextEmbedder, VastMemoryAdapter, VectorIndex
 from worldstate.config import MEMORY_DB, VECTOR_PATH
 
 
+STOP = {"show", "me", "the", "a", "an", "of", "did", "when", "what", "which", "find", "runs", "run", "things",
+        "happened", "to", "is", "was", "were", "in", "on", "and", "or", "for", "like", "this", "that", "with", "any"}
+
+
+def _stems(text: str) -> set[str]:
+    words = "".join(ch.lower() if ch.isalnum() else " " for ch in text).split()
+    return {w[:5] for w in words if w not in STOP and len(w) > 2}
+
+
 class MemoryStore:
     def __init__(self) -> None:
         self.embedder = TextEmbedder()
@@ -116,11 +125,21 @@ class MemoryStore:
         self.db.commit()
 
     def search(self, query: str, k: int = 5) -> list[dict]:
+        """Hybrid: FAISS similarity over every run, plus a stemmed keyword-overlap boost."""
         if not self.index.ids:
             return []
         vector = self.embedder.embed([query])[0]
+        dense = dict(self.index.search(vector, len(self.index.ids)))
+        terms = _stems(query)
+        scored = []
+        for episode_id, sim in dense.items():
+            row = self.db.execute("SELECT transcript FROM episodes WHERE id = ?", (episode_id,)).fetchone()
+            words = _stems(row["transcript"]) if row else set()
+            overlap = len(terms & words) / max(len(terms), 1)
+            scored.append((episode_id, sim + overlap))
+        scored.sort(key=lambda item: -item[1])
         hits = []
-        for episode_id, score in self.index.search(vector, k):
+        for episode_id, score in scored[:k]:
             row = self.db.execute("SELECT * FROM episodes WHERE id = ?", (episode_id,)).fetchone()
             transcript = row["transcript"] if row else ""
             hits.append(
@@ -129,7 +148,7 @@ class MemoryStore:
                     "score": round(float(score), 4),
                     "role": row["role"] if row else None,
                     "kind": row["kind"] if row else None,
-                    "snippet": transcript[:220],
+                    "snippet": transcript[:320],
                 }
             )
         return hits

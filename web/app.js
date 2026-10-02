@@ -307,22 +307,51 @@ $("remember-btn").addEventListener("click", async () => {
   renderAnalysis();
 });
 
-$("search-btn").addEventListener("click", async () => {
-  const query = state.analysis?.expected?.from || "hovering at the target";
-  const hits = await api(`/api/search?q=${encodeURIComponent(query)}`);
-  const analogous = state.analysis?.analogous || [];
+function renderHits(cards, label) {
   const host = $("search-results");
   host.innerHTML = "";
-  const cards = analogous.length ? analogous : hits;
+  if (label) {
+    const head = document.createElement("p");
+    head.className = "stub";
+    head.textContent = label;
+    host.append(head);
+  }
   for (const hit of cards) {
     const card = document.createElement("article");
+    card.className = "hit";
     const title = document.createElement("strong");
-    title.textContent = `${hit.id} · next ${hit.next_state || hit.kind || ""}`;
+    title.textContent = hit.next_state ? `${hit.id} · next ${hit.next_state}` : `${hit.id} · ${hit.kind || hit.role || ""}`;
     const body = document.createElement("div");
     body.textContent = hit.snippet || "";
     card.append(title, body);
+    if (state.episodes.some((ep) => ep.id === hit.id)) {
+      card.addEventListener("click", () => selectEpisode(hit.id));
+    }
     host.append(card);
   }
+  if (!cards.length) host.append(Object.assign(document.createElement("p"), { className: "stub", textContent: "No matching runs in memory." }));
+}
+
+async function askMemory(query) {
+  $("search-q").value = query;
+  const hits = await api(`/api/search?q=${encodeURIComponent(query)}&k=5`);
+  renderHits(hits, `Memory results for “${query}” (SQLite + FAISS)`);
+}
+
+$("search-btn").addEventListener("click", async () => {
+  const typed = $("search-q").value.trim();
+  if (typed) return askMemory(typed);
+  const analogous = state.analysis?.analogous || [];
+  if (analogous.length) return renderHits(analogous, "Reference runs that shared this prefix");
+  return askMemory(state.analysis?.expected?.from || "unusual transition");
+});
+
+$("search-q").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.value.trim()) askMemory(event.target.value.trim());
+});
+
+document.querySelectorAll(".chips button").forEach((chip) => {
+  chip.addEventListener("click", () => askMemory(chip.dataset.q));
 });
 
 $("upload-similar-btn").addEventListener("click", async () => {
