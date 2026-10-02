@@ -77,3 +77,5 @@ Built with HACP agent pairs in separate git worktrees: SIM (codex hit its quota;
 - Cosmos narrations for the demo runs were pre-generated and curated by the operator.
 - The public URL is tied to a Cloudflare quick tunnel on a laptop and changes if the tunnel restarts.
 - Boot takes about 6 minutes on a laptop CPU (the graph is learned from video at startup). Relearn/reset is an operator command (`POST /api/learn` locally); the Learn button is hidden in the judge UI.
+
+**VAST corpus view** (`/static/vast/`, linked from the header): 40 clips from our team's VAST VSS index (`sdg_warehouse_cam-2`), exported on the workshop VM with `scripts/vss_export.py`, shown with the VAST pipeline's own Cosmos Reason captions and YOLO11 detections and searchable from the page. The footage is served by the demo but not committed to this public repo.

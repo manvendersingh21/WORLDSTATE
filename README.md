@@ -118,3 +118,5 @@ The work was split across HACP pairs (bilateral contracts, frozen terms, counter
 | VAST diagnostic | Cursor, GPT-5.3 Codex: diagnostic script | agy, Gemini Flash: report |
 
 Claude Opus 5.5 integrated everything on main (dataset loader, learn/eval, Cosmos narration, naming, deploy).
+
+**VAST corpus view** (`/static/vast/`, linked from the header): 40 clips from our team's VAST VSS index (`sdg_warehouse_cam-2`), exported on the workshop VM with `scripts/vss_export.py`, shown with the VAST pipeline's own Cosmos Reason captions and YOLO11 detections and searchable from the page. The footage is served by the demo but not committed to this public repo.
