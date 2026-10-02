@@ -787,6 +787,11 @@ document.querySelectorAll("#view-toggle button").forEach((btn) => {
   btn.addEventListener("click", () => setView(btn.dataset.view));
 });
 
-boot().catch((error) => {
-  $("event-headline").textContent = error.message;
-});
+// 3D digital twin is the default view. The clips have no audio, so muting lets the
+// hidden video (the twin's clock) autoplay without a click.
+$("video").muted = true;
+boot()
+  .then(() => setView("twin"))
+  .catch((error) => {
+    $("event-headline").textContent = error.message;
+  });
