@@ -1,0 +1,5 @@
+# Optional adapters. The demo runs with requirements.txt alone.
+# YOLO / sentence-transformers pull PyTorch and model weights.
+sentence-transformers>=3.0
+ultralytics>=8.3
+hdbscan>=0.8.38

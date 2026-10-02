@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WORLDSTATE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Outfit:wght@360;500;600&display=swap" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <p class="kicker">Unsupervised process model</p>
+      <h1>Worldstate</h1>
+    </div>
+    <p id="dataset-note" class="note"></p>
+    <div class="top-actions">
+      <span id="version" class="chip">world model</span>
+      <button id="learn-btn" type="button">Learn process</button>
+    </div>
+  </header>
+  <div class="shell">
+    <aside class="rail">
+      <h2>Runs</h2>
+      <div id="episode-list"></div>
+      <label class="upload">
+        Upload a clip
+        <input id="file-input" type="file" accept="video/mp4,video/quicktime" />
+      </label>
+    </aside>
+    <main>
+      <section class="stage">
+        <div id="alert" class="alert hidden"></div>
+        <div class="player">
+          <video id="player" playsinline controls preload="metadata"></video>
+          <canvas id="overlay"></canvas>
+        </div>
+        <div id="timeline" class="timeline"></div>
+        <div id="sequence" class="sequence"></div>
+      </section>
+      <section class="graph-wrap">
+        <div class="graph-head">
+          <h2>State graph</h2>
+          <p id="graph-meta"></p>
+        </div>
+        <svg id="graph" viewBox="0 0 980 210" role="img" aria-label="Learned state graph"></svg>
+      </section>
+    </main>
+    <aside class="insight">
+      <h2>This run</h2>
+      <p id="score-line" class="score">Select a run.</p>
+      <dl id="facts" class="facts"></dl>
+      <h3>Why</h3>
+      <p id="why" class="why">The explanation appears after a run is analyzed.</p>
+      <h3>What should have happened</h3>
+      <p id="expected-path" class="path"></p>
+      <h3>Recovery</h3>
+      <p id="recovery-path" class="path"></p>
+      <p id="video-stub" class="stub"></p>
+      <div class="row">
+        <button id="search-btn" type="button" disabled>Search memory</button>
+        <button id="remember-btn" type="button" disabled>Remember this failure</button>
+      </div>
+      <div id="search-results" class="results"></div>
+      <button id="upload-similar-btn" type="button">Upload similar run</button>
+      <p id="adapters" class="adapters"></p>
+    </aside>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
