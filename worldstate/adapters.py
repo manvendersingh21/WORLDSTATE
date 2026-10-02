@@ -136,6 +136,8 @@ def _l2(matrix: np.ndarray) -> np.ndarray:
 def credential_report() -> dict:
     """Lengths only. Never include secret values."""
     names = (
+        "COSMOS_API_KEY",
+        "GPU_BEARER_TOKEN",
         "NVIDIA_API_KEY",
         "NGC_API_KEY",
         "NV_API_KEY",
@@ -158,7 +160,8 @@ def credential_report() -> dict:
 def resolve_nvidia() -> dict:
     key = ""
     key_source = None
-    for name in ("NVIDIA_API_KEY", "NGC_API_KEY", "NV_API_KEY"):
+    # COSMOS_API_KEY / GPU_BEARER_TOKEN: bearer for a self-hosted or event Cosmos endpoint.
+    for name in ("COSMOS_API_KEY", "GPU_BEARER_TOKEN", "NVIDIA_API_KEY", "NGC_API_KEY", "NV_API_KEY"):
         raw = os.environ.get(name, "").strip()
         if raw:
             key = raw
@@ -173,6 +176,8 @@ def resolve_nvidia() -> dict:
             base_source = name
             break
     custom = base_source != "default"
+    if custom and not base.endswith("/v1"):
+        base = base + "/v1"
     model = os.environ.get("NVIDIA_COSMOS_MODEL", "").strip() or os.environ.get("COSMOS_MODEL", "").strip()
     if not model:
         model = "nvidia/cosmos3-nano-reasoner"
@@ -211,12 +216,29 @@ class CosmosReasonAdapter:
             "attempted": 0,
             "succeeded": 0,
             "failed": 0,
-            "skipped_reason": None if self.api_key else "no NVIDIA/NGC/NV API key in the environment",
+            "skipped_reason": None if self.api_key else "no COSMOS_API_KEY / NVIDIA_API_KEY in the environment",
         }
+        if self.custom_base and not pinned and self.api_key:
+            self.model = self._discover_model() or "nvidia/cosmos3-reason"
 
     @property
     def available(self) -> bool:
         return bool(self.api_key)
+
+    def _discover_model(self) -> str | None:
+        """A NIM / vLLM endpoint names its model at /v1/models (the event serves nvidia/cosmos3-reason)."""
+        request = urllib.request.Request(
+            f"{self.base}/models", headers={"Authorization": f"Bearer {self.api_key}"}
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=10) as response:
+                data = json.loads(response.read().decode()).get("data") or []
+            ids = [item.get("id") for item in data if item.get("id")]
+            cosmos = [i for i in ids if "cosmos" in i.lower()]
+            return (cosmos or ids or [None])[0]
+        except Exception as exc:
+            self.last_status["last_error"] = _redact(f"model discovery failed: {exc}", self.api_key)[:300]
+            return None
 
     def refine_events(self, video_path: Path, events: list[dict], summary: str) -> list[dict] | None:
         if not self.available or not events:
