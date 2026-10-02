@@ -116,8 +116,12 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events
   color: #ffd2cb;
   border: 1px solid #8a463c;
 }
-.alert.known { background: #1b2c33; color: #d5f1f8; border-color: #3e6d7c; }
-.alert.normal { background: #242918; color: #e4efc4; border-color: #5d6b3b; }
+.alert { font-size: 0.95rem; border-width: 2px; background: #4a1d16; border-color: var(--red); }
+.alert.known { background: #13303c; color: #d5f1f8; border-color: var(--blue); }
+.alert.normal { background: #263014; color: #e4efc4; border-color: var(--green); }
+.alert .badge { display: inline-block; margin-right: 0.6rem; padding: 0.1rem 0.5rem; border-radius: 6px; font-size: 1.05rem; letter-spacing: 0.04em; background: var(--red); color: #1a0c09; }
+.alert.known .badge { background: var(--blue); color: #08171d; }
+.alert.normal .badge { background: var(--green); color: #141a08; }
 .hidden { display: none; }
 .timeline { position: relative; height: 10px; margin: 0.55rem 0; background: #2a2d24; border-radius: 99px; cursor: pointer; }
 .timeline i { position: absolute; top: -3px; width: 3px; height: 16px; background: var(--red); border-radius: 2px; }

@@ -96,20 +96,27 @@ function renderAnalysis() {
     alert.classList.add("hidden");
     return;
   }
+  const badge = (word, detail) => {
+    alert.innerHTML = "";
+    const strong = document.createElement("b");
+    strong.className = "badge";
+    strong.textContent = word;
+    alert.append(strong, document.createTextNode(detail));
+  };
   if (analysis.status === "novel") {
-    alert.textContent = `Novel transition · score ${analysis.score.toFixed(2)} · diverges at ${analysis.first_divergence_s}s · ${analysis.support.text}`;
+    badge("NOVEL FAILURE", `New transition at ${analysis.first_divergence_s}s · ${analysis.expected.from} → ${analysis.observed.to} · ${analysis.support.text} · score ${analysis.score.toFixed(2)}`);
   } else if (analysis.status === "known_failure") {
     alert.classList.add("known");
-    alert.textContent = `Known failure · ${analysis.known_class?.replaceAll("_", " ")} · world model v${analysis.version}`;
+    badge("KNOWN FAILURE", `${analysis.known_class?.replaceAll("_", " ")} · recognized from memory · world model v${analysis.version}`);
   } else {
     alert.classList.add("normal");
-    alert.textContent = `Consistent with the learned process · score ${analysis.score.toFixed(2)}`;
+    badge("NORMAL", `Matches the learned process · score ${analysis.score.toFixed(2)}`);
   }
   $("score-line").textContent = analysis.status === "known_failure"
-    ? "Known failure"
+    ? "KNOWN FAILURE"
     : analysis.status === "novel"
-      ? "Novel transition"
-      : "In distribution";
+      ? "NOVEL FAILURE"
+      : "NORMAL";
   const facts = $("facts");
   facts.innerHTML = "";
   const rows = [
