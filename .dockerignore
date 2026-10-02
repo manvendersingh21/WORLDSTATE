@@ -1,0 +1,34 @@
+# Exclude everything, then re-include exactly what the image may contain.
+# Image content: worldstate/, web/, scripts/, data/process/ (optional,
+# may be absent), models/ (optional, may be absent), requirements files.
+*
+!worldstate
+!web
+!scripts
+!data
+!data/process
+!models
+!requirements.txt
+!requirements-yolo.txt
+
+# Never ship: local state, secrets, venvs, learned artifacts, caches.
+# (.env, .venv*, .hacp, .git, data/model, data/uploads, data/videos,
+# __pycache__ are already excluded by the rules above; these are explicit
+# guards so nothing leaks even if the include list changes later.)
+.env
+.env.*
+.venv*
+.hacp
+.git
+data/**
+!data/process
+!data/process/**
+data/model
+data/uploads
+data/videos
+**/__pycache__
+**/*.pyc
+**/.DS_Store
+.pytest_cache
+logs
+*.log

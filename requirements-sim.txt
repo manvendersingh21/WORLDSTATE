@@ -1,0 +1,6 @@
+# Simulator for the repeated-process dataset (scripts/gen_process.py). Not needed to serve.
+robosuite==1.5.2
+mujoco==3.3.0
+numpy>=1.26
+opencv-python-headless>=4.10
+pytest>=8

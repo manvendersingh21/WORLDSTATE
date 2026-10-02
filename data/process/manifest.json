@@ -1,0 +1,209 @@
+{
+  "generator": "robosuite-lift",
+  "generator_version": 1,
+  "fps": 20,
+  "width": 480,
+  "height": 360,
+  "camera": "frontview",
+  "pad_center": [
+    0.0,
+    0.12,
+    0.801
+  ],
+  "table_z": 0.8,
+  "cube_half_size": 0.0219,
+  "episodes": [
+    {
+      "id": "normal_00",
+      "file": "normal_00.mp4",
+      "kind": "normal",
+      "seed": 0,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_01",
+      "file": "normal_01.mp4",
+      "kind": "normal",
+      "seed": 1,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_02",
+      "file": "normal_02.mp4",
+      "kind": "normal",
+      "seed": 2,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_03",
+      "file": "normal_03.mp4",
+      "kind": "normal",
+      "seed": 3,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_04",
+      "file": "normal_04.mp4",
+      "kind": "normal",
+      "seed": 4,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_05",
+      "file": "normal_05.mp4",
+      "kind": "normal",
+      "seed": 5,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_06",
+      "file": "normal_06.mp4",
+      "kind": "normal",
+      "seed": 6,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_07",
+      "file": "normal_07.mp4",
+      "kind": "normal",
+      "seed": 7,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_08",
+      "file": "normal_08.mp4",
+      "kind": "normal",
+      "seed": 8,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_09",
+      "file": "normal_09.mp4",
+      "kind": "normal",
+      "seed": 9,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_10",
+      "file": "normal_10.mp4",
+      "kind": "normal",
+      "seed": 10,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_11",
+      "file": "normal_11.mp4",
+      "kind": "normal",
+      "seed": 11,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_12",
+      "file": "normal_12.mp4",
+      "kind": "normal",
+      "seed": 12,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_13",
+      "file": "normal_13.mp4",
+      "kind": "normal",
+      "seed": 13,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_14",
+      "file": "normal_14.mp4",
+      "kind": "normal",
+      "seed": 14,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_15",
+      "file": "normal_15.mp4",
+      "kind": "normal",
+      "seed": 15,
+      "role": "reference",
+      "split": "train"
+    },
+    {
+      "id": "normal_16",
+      "file": "normal_16.mp4",
+      "kind": "normal",
+      "seed": 16,
+      "role": "heldout_normal",
+      "split": "test"
+    },
+    {
+      "id": "normal_17",
+      "file": "normal_17.mp4",
+      "kind": "normal",
+      "seed": 17,
+      "role": "heldout_normal",
+      "split": "test"
+    },
+    {
+      "id": "normal_18",
+      "file": "normal_18.mp4",
+      "kind": "normal",
+      "seed": 18,
+      "role": "heldout_normal",
+      "split": "test"
+    },
+    {
+      "id": "normal_19",
+      "file": "normal_19.mp4",
+      "kind": "normal",
+      "seed": 19,
+      "role": "heldout_normal",
+      "split": "test"
+    },
+    {
+      "id": "miss_unseen",
+      "file": "miss_unseen.mp4",
+      "kind": "miss_right",
+      "seed": 100,
+      "role": "unseen_failure",
+      "split": "test"
+    },
+    {
+      "id": "miss_eval_right",
+      "file": "miss_eval_right.mp4",
+      "kind": "miss_right",
+      "seed": 101,
+      "role": "eval_failure",
+      "split": "test"
+    },
+    {
+      "id": "miss_eval_left",
+      "file": "miss_eval_left.mp4",
+      "kind": "miss_left",
+      "seed": 102,
+      "role": "eval_failure",
+      "split": "test"
+    },
+    {
+      "id": "miss_similar",
+      "file": "miss_similar.mp4",
+      "kind": "miss_right",
+      "seed": 103,
+      "role": "similar_hidden",
+      "split": "test"
+    }
+  ]
+}

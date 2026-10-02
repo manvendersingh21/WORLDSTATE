@@ -1,0 +1,304 @@
+{
+  "episodes": [
+    {
+      "id": "normal_00",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0006,
+        0.12
+      ],
+      "dist_to_pad": 0.0006,
+      "max_cube_z_rise": 0.1321,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_01",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0005,
+        0.1199
+      ],
+      "dist_to_pad": 0.0005,
+      "max_cube_z_rise": 0.1319,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_02",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0012,
+        0.12
+      ],
+      "dist_to_pad": 0.0012,
+      "max_cube_z_rise": 0.1319,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_03",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0012,
+        0.12
+      ],
+      "dist_to_pad": 0.0012,
+      "max_cube_z_rise": 0.1319,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_04",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0003,
+        0.1197
+      ],
+      "dist_to_pad": 0.0004,
+      "max_cube_z_rise": 0.1324,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_05",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0007,
+        0.1199
+      ],
+      "dist_to_pad": 0.0007,
+      "max_cube_z_rise": 0.1322,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_06",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0007,
+        0.1197
+      ],
+      "dist_to_pad": 0.0008,
+      "max_cube_z_rise": 0.1319,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_07",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0009,
+        0.12
+      ],
+      "dist_to_pad": 0.0009,
+      "max_cube_z_rise": 0.1323,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_08",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0005,
+        0.1197
+      ],
+      "dist_to_pad": 0.0006,
+      "max_cube_z_rise": 0.1319,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_09",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0009,
+        0.1201
+      ],
+      "dist_to_pad": 0.001,
+      "max_cube_z_rise": 0.1323,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_10",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0004,
+        0.1196
+      ],
+      "dist_to_pad": 0.0005,
+      "max_cube_z_rise": 0.1325,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_11",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0005,
+        0.1199
+      ],
+      "dist_to_pad": 0.0005,
+      "max_cube_z_rise": 0.1317,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_12",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0006,
+        0.12
+      ],
+      "dist_to_pad": 0.0006,
+      "max_cube_z_rise": 0.1319,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_13",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0006,
+        0.1199
+      ],
+      "dist_to_pad": 0.0006,
+      "max_cube_z_rise": 0.1324,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_14",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0013,
+        0.1196
+      ],
+      "dist_to_pad": 0.0014,
+      "max_cube_z_rise": 0.1324,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_15",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0007,
+        0.1198
+      ],
+      "dist_to_pad": 0.0007,
+      "max_cube_z_rise": 0.1322,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_16",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0007,
+        0.12
+      ],
+      "dist_to_pad": 0.0007,
+      "max_cube_z_rise": 0.132,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_17",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.001,
+        0.1195
+      ],
+      "dist_to_pad": 0.0011,
+      "max_cube_z_rise": 0.1324,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_18",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0013,
+        0.1199
+      ],
+      "dist_to_pad": 0.0013,
+      "max_cube_z_rise": 0.132,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "normal_19",
+      "kind": "normal",
+      "final_cube_xy": [
+        -0.0007,
+        0.1198
+      ],
+      "dist_to_pad": 0.0007,
+      "max_cube_z_rise": 0.132,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": null
+    },
+    {
+      "id": "miss_unseen",
+      "kind": "miss_right",
+      "final_cube_xy": [
+        0.0034,
+        -0.0336
+      ],
+      "dist_to_pad": 0.1536,
+      "max_cube_z_rise": 0.0,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": {
+        "frame": 41,
+        "shift_y": 0.0454
+      }
+    },
+    {
+      "id": "miss_eval_right",
+      "kind": "miss_right",
+      "final_cube_xy": [
+        0.0044,
+        -0.0305
+      ],
+      "dist_to_pad": 0.1506,
+      "max_cube_z_rise": 0.0,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": {
+        "frame": 43,
+        "shift_y": 0.0509
+      }
+    },
+    {
+      "id": "miss_eval_left",
+      "kind": "miss_left",
+      "final_cube_xy": [
+        -0.0034,
+        -0.1271
+      ],
+      "dist_to_pad": 0.2471,
+      "max_cube_z_rise": 0.0,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": {
+        "frame": 43,
+        "shift_y": -0.048
+      }
+    },
+    {
+      "id": "miss_similar",
+      "kind": "miss_right",
+      "final_cube_xy": [
+        -0.0019,
+        -0.0292
+      ],
+      "dist_to_pad": 0.1492,
+      "max_cube_z_rise": 0.0,
+      "cube_half_size": 0.021903170606421083,
+      "displacement": {
+        "frame": 41,
+        "shift_y": 0.0536
+      }
+    }
+  ]
+}

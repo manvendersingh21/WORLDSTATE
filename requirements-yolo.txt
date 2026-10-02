@@ -1,0 +1,6 @@
+# YOLO / YOLO-World perception stack (WITH_YOLO=1 only).
+# torch itself is installed first, CPU-only, from
+# https://download.pytorch.org/whl/cpu (see Dockerfile), so this file must
+# not pull a CUDA torch from PyPI: the already-installed CPU wheel satisfies
+# ultralytics' torch requirement.
+ultralytics>=8.3
