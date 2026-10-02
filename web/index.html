@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
   <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="stylesheet" href="/static/twin/callouts.css" />
 </head>
 <body>
   <header class="top">
@@ -88,6 +89,7 @@
         </div>
         <button id="remember-btn" type="button" class="hidden">Remember this failure</button>
         <div id="remember-confirm" class="hidden">✓ Failure pattern added to world memory</div>
+        <p id="novel-hint" class="novel-hint hidden">Remember it → WORLDSTATE will recognize the next one and show the fix.</p>
         <div class="cosmos">
           <h3 class="cosmos-head">COSMOS REASONING</h3>
           <p id="cosmos-text"></p>
@@ -95,6 +97,16 @@
             <button id="cosmos-expand" type="button" class="link hidden">Show full</button>
             <span id="cosmos-attribution"></span>
           </div>
+        </div>
+        <div id="fix-card" class="fix-card hidden">
+          <div class="fix-eyebrow">THE FIX — LEARNED FROM MEMORY</div>
+          <div id="fix-plan" class="fix-plan"></div>
+          <div class="fix-actions">
+            <button id="fix-play-btn" type="button">▶ SHOW CORRECTED ATTEMPT</button>
+            <button id="fix-back" type="button" class="link hidden">← Back to failure</button>
+          </div>
+          <div id="fix-confirm" class="hidden">✓ Next attempt passes — placed on target</div>
+          <p class="fix-note">Simulated corrective attempt in the same cell: same displacement (4.5 cm), closed-loop re-align, then grasp and place.</p>
         </div>
       </aside>
     </section>

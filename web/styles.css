@@ -465,3 +465,34 @@ button:disabled { opacity: 0.45; cursor: default; }
 .drawer-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 1.2rem; padding: 0.8rem 0 0.4rem; }
 .drawer h3 { margin: 0 0 0.3rem; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
 .drawer p { margin: 0 0 0.7rem; font-size: 0.85rem; line-height: 1.5; color: var(--muted); }
+
+/* ---------- THE FIX loop ---------- */
+.novel-hint { margin: -0.3rem 0 0; color: var(--muted); font-size: 0.8rem; line-height: 1.4; }
+.fix-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(62, 139, 255, 0.45);
+  border-radius: 8px;
+  background: rgba(62, 139, 255, 0.07);
+  animation: fadein 0.6s ease;
+}
+.fix-eyebrow { color: var(--blue); font-size: 0.74rem; font-weight: 700; letter-spacing: 0.18em; }
+.fix-plan { font-size: 0.95rem; font-weight: 600; line-height: 1.35; }
+.fix-actions { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
+#fix-play-btn {
+  background: var(--blue);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 7px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 14px rgba(62, 139, 255, 0.3);
+}
+#fix-play-btn:hover { background: #5A9CFF; }
+#fix-confirm { color: var(--green); font-size: 0.92rem; font-weight: 700; animation: fadein 0.6s ease; }
+.fix-note { margin: 0; color: var(--faint); font-size: 0.74rem; line-height: 1.4; }
+.fix-card[data-active="true"] { border-color: rgba(47, 210, 122, 0.5); background: rgba(47, 210, 122, 0.06); }

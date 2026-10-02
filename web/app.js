@@ -7,7 +7,11 @@ const state = {
   narration: null,
   narrationExpanded: false,
   justRemembered: false,
+  fixMode: false,
 };
+
+const RECOVERY_RUN = "recovered_attempt";
+const RECOVERY_VIDEO = "/static/recovery/recovered_attempt.mp4";
 
 const $ = (id) => document.getElementById(id);
 
@@ -114,6 +118,8 @@ function renderRunSelect() {
 async function selectEpisode(id) {
   state.current = id;
   state.justRemembered = false;
+  state.fixMode = false;
+  $("fix-confirm").classList.add("hidden");
   state.narration = null;
   state.narrationExpanded = false;
   if ($("run-select").value !== id) $("run-select").value = id;
@@ -179,6 +185,8 @@ function renderAnalysis() {
   remember.disabled = status !== "novel";
   remember.textContent = "Remember this failure";
   $("remember-confirm").classList.toggle("hidden", !state.justRemembered);
+  $("novel-hint").classList.toggle("hidden", status !== "novel");
+  renderFixCard(analysis);
 
   renderDrawer(analysis);
   loadNarration(analysis.episode_id);
@@ -377,7 +385,10 @@ function drawOverlay() {
   const canvas = $("overlay");
   if (!$("tracking-toggle").checked) return;
   const frames = JSON.parse(video.dataset.frames || "[]");
-  if (!frames.length || !video.videoWidth) return;
+  if (!frames.length || !video.videoWidth) {
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d");
@@ -414,6 +425,7 @@ $("tracking-toggle").addEventListener("change", (event) => {
 });
 
 function seekToStory() {
+  if (state.fixMode) return;
   const video = $("video");
   const analysis = state.analysis;
   if (!video || !analysis || !Number.isFinite(video.duration)) return;
@@ -588,7 +600,7 @@ $("file-input").addEventListener("change", async (event) => {
 
 /* ---------- 3D digital twin view ---------- */
 
-const twinState = { instance: null, loadedRun: null, raf: 0, view: "camera" };
+const twinState = { instance: null, callouts: null, loadedRun: null, raf: 0, view: "camera" };
 
 async function ensureTwin() {
   if (twinState.instance) return twinState.instance;
@@ -600,24 +612,132 @@ async function ensureTwin() {
     dataBase: "/static/twin/data",
   });
   window.__twin = twinState.instance;
-  return twinState.instance;
+  const twin = twinState.instance;
+  try {
+    const { mountCallouts } = await import("/static/twin/callouts.js");
+    twinState.callouts = mountCallouts(twin, $("twin-mount"));
+    window.__callouts = twinState.callouts;
+  } catch (error) {
+    twinState.callouts = null;
+  }
+  // Dispose the callouts alongside the twin.
+  if (typeof twin.dispose === "function") {
+    const disposeTwin = twin.dispose.bind(twin);
+    twin.dispose = (...args) => {
+      if (twinState.callouts) twinState.callouts.dispose();
+      twinState.callouts = null;
+      twinState.instance = null;
+      twinState.loadedRun = null;
+      return disposeTwin(...args);
+    };
+  }
+  return twin;
+}
+
+async function loadTwinFrames(runId) {
+  try {
+    const response = await fetch(`/static/twin/data/${encodeURIComponent(runId)}.json`);
+    if (!response.ok) return null;
+    const run = await response.json().catch(() => null);
+    return run && Array.isArray(run.frames) ? run.frames : null;
+  } catch (error) {
+    return null;
+  }
 }
 
 async function syncTwinRun() {
   const twin = twinState.instance;
   if (!twin || !state.current) return;
-  if (twinState.loadedRun !== state.current) {
-    twinState.loadedRun = state.current;
+  const runId = state.fixMode ? RECOVERY_RUN : state.current;
+  const analysis = state.fixMode ? fixAnalysis() : state.analysis;
+  const callouts = twinState.callouts;
+  if (twinState.loadedRun !== runId) {
+    twinState.loadedRun = runId;
     // Runs without twin data show the module's own "twin data unavailable" note.
-    await twin.load(state.current);
-    twin.setAnalysis(state.analysis);
+    const [, frames] = await Promise.all([twin.load(runId), loadTwinFrames(runId)]);
+    if (twinState.loadedRun !== runId) return;
+    twin.setAnalysis(analysis);
+    if (callouts) {
+      callouts.setRun(runId, frames);
+      callouts.setAnalysis(analysis);
+    }
     // Re-apply the default perspective after load so the whole arm is framed.
     twin.resetView();
     twin.setTime($("video").currentTime || 0);
   } else {
-    twin.setAnalysis(state.analysis);
+    twin.setAnalysis(analysis);
+    if (callouts) callouts.setAnalysis(analysis);
   }
 }
+
+/* ---------- THE FIX: corrected attempt from memory ---------- */
+
+function shortRecoveryName(name) {
+  if (/displaced after align/i.test(String(name))) return "Re-align to displaced cube";
+  return shortNodeName(name);
+}
+
+function fixAnalysis() {
+  const analysis = state.analysis || {};
+  return { status: "normal", sequence: [], support: analysis.support };
+}
+
+function renderFixCard(analysis) {
+  const card = $("fix-card");
+  const show = analysis?.status === "known_failure";
+  card.classList.toggle("hidden", !show);
+  if (!show) return;
+  const names = (analysis.recovery_path || []).map((step) => shortRecoveryName(step.name));
+  $("fix-plan").textContent = names.length ? `Recovery plan: ${names.join(" → ")}` : "Recovery plan: Re-align to displaced cube";
+  card.dataset.active = String(state.fixMode);
+  $("fix-play-btn").classList.toggle("hidden", state.fixMode);
+  $("fix-back").classList.toggle("hidden", !state.fixMode);
+}
+
+function renderFixMode() {
+  for (const id of ["status-badge", "status-word"]) {
+    const el = $(id);
+    el.dataset.status = "normal";
+    el.textContent = "CORRECTED ✓";
+    el.classList.remove("flip");
+    void el.offsetWidth;
+    el.classList.add("flip");
+  }
+  $("event-headline").textContent = "RE-ALIGNED · GRASPED · PLACED";
+  const analysis = state.analysis || {};
+  if (analysis.expected?.to) $("field-observed").textContent = analysis.expected.to;
+  const support = analysis.support;
+  if (support?.n != null) $("field-support").textContent = `${support.expected_k ?? support.n} / ${support.n}`;
+  $("divergence-block").classList.add("hidden");
+  $("remember-btn").classList.add("hidden");
+  $("remember-confirm").classList.add("hidden");
+  $("novel-hint").classList.add("hidden");
+  $("timeline").innerHTML = "";
+  renderFixCard(state.analysis);
+}
+
+function enterFixMode() {
+  if (!state.analysis || state.analysis.status !== "known_failure") return;
+  state.fixMode = true;
+  $("fix-confirm").classList.add("hidden");
+  renderFixMode();
+  const video = $("video");
+  video.loop = false;
+  video.dataset.frames = "[]";
+  video.src = RECOVERY_VIDEO;
+  video.currentTime = 0;
+  video.play().catch(() => {});
+  drawOverlay();
+  if (twinState.instance) syncTwinRun().catch(() => {});
+}
+
+$("fix-play-btn").addEventListener("click", enterFixMode);
+$("fix-back").addEventListener("click", () => {
+  if (state.current) selectEpisode(state.current);
+});
+$("video").addEventListener("ended", () => {
+  if (state.fixMode) $("fix-confirm").classList.remove("hidden");
+});
 
 function startTwinClock() {
   cancelAnimationFrame(twinState.raf);
