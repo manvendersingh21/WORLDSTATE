@@ -121,10 +121,15 @@ async function selectEpisode(id) {
   const video = $("video");
   video.src = `/api/episodes/${id}/video`;
   video.dataset.frames = JSON.stringify(detail.frames || []);
+  // Loop and resume playback so the run stays alive on screen (and keeps
+  // driving the twin clock). Autoplay may be blocked unmuted; that's fine.
+  video.loop = true;
+  video.play().catch(() => {});
   state.analysis = await api(`/api/episodes/${id}/analysis`);
   renderAnalysis();
   seekToStory();
   drawOverlay();
+  if (twinState.instance) syncTwinRun().catch(() => {});
 }
 
 const STATUS_WORDS = { normal: "NORMAL", novel: "NOVEL FAILURE", known_failure: "KNOWN FAILURE" };
@@ -152,7 +157,7 @@ function renderAnalysis() {
   if (status !== "normal" && analysis.first_divergence_s != null) {
     divergenceBlock.classList.remove("hidden");
     divergenceBlock.classList.toggle("known", status === "known_failure");
-    $("divergence-time").textContent = `${analysis.first_divergence_s}s`;
+    $("divergence-time").textContent = `${Number(analysis.first_divergence_s).toFixed(3)}s`;
   } else {
     divergenceBlock.classList.add("hidden");
   }
@@ -243,6 +248,7 @@ function renderNarration() {
   const attribution = $("cosmos-attribution");
   const expand = $("cosmos-expand");
   text.textContent = state.narrationExpanded ? narration.full : narration.excerpt;
+  text.classList.toggle("clamp", !state.narrationExpanded);
   expand.classList.toggle("hidden", !narration.hasMore);
   expand.textContent = state.narrationExpanded ? "Show less" : "Show full";
   if (narration.source === "cosmos-reason") {
@@ -277,15 +283,17 @@ function renderGraph() {
   const nominal = model.nodes.filter((node) => node.kind !== "failure");
   const failures = model.nodes.filter((node) => node.kind === "failure");
   const width = 1360;
-  const yMain = 84;
-  const yBranch = 190;
-  const rMain = 28;
+  const yMain = 62;
+  const yBranch = 150;
+  const rMain = 30;
   const rBranch = 24;
+  const margin = 64;
   const xOf = {};
   nominal.forEach((node, index) => {
-    xOf[node.id] = 90 + index * ((width - 180) / Math.max(nominal.length - 1, 1));
+    xOf[node.id] = margin + index * ((width - margin * 2) / Math.max(nominal.length - 1, 1));
   });
 
+  const isNormal = analysis?.status === "normal";
   const divergeFrom = analysis && analysis.status !== "normal"
     ? nominal.find((node) => node.name === analysis.expected?.from)
     : null;
@@ -293,43 +301,47 @@ function renderGraph() {
 
   let markup = "";
 
-  // learned path edges (muted amber)
+  // learned path edges (muted slate; green when this run traversed them normally)
   for (const edge of model.edges || []) {
     if (edge.kind !== "nominal" || xOf[edge.src] == null || xOf[edge.dst] == null) continue;
-    markup += `<line class="edge-nominal" x1="${xOf[edge.src] + rMain}" y1="${yMain}" x2="${xOf[edge.dst] - rMain}" y2="${yMain}"/>`;
+    markup += `<line class="edge-nominal${isNormal ? " traversed" : ""}" x1="${xOf[edge.src] + rMain}" y1="${yMain}" x2="${xOf[edge.dst] - rMain}" y2="${yMain}"/>`;
   }
+
+  // branch geometry: leave the main circle at ~45° and curve away so the
+  // path never strikes through node labels (labels sit above the nodes).
+  const branchStart = (srcX) => `M ${srcX + rMain * 0.7} ${yMain + rMain * 0.7} Q ${srcX + 42} ${yBranch}, `;
 
   // known failure branches (blue)
   for (const node of failures) {
     const inEdge = (model.edges || []).find((edge) => edge.dst === node.id && edge.kind === "failure");
     const srcX = inEdge && xOf[inEdge.src] != null ? xOf[inEdge.src] : width / 2;
-    const x = srcX + 130;
+    const x = srcX + 150;
     xOf[node.id] = x;
-    markup += `<path class="branch-known" d="M ${srcX + 8} ${yMain + rMain - 4} Q ${srcX + 30} ${yBranch}, ${x - rBranch - 4} ${yBranch}"/>`;
+    markup += `<path class="branch-known" d="${branchStart(srcX)}${x - rBranch - 4} ${yBranch}"/>`;
     markup += `<circle class="branch-known" cx="${x}" cy="${yBranch}" r="${rBranch}"/>`;
-    markup += `<text class="node-label branch-known" x="${x}" y="${yBranch + rBranch + 20}">${escapeXml(shortNodeName(node.name))}</text>`;
+    markup += `<text class="node-label branch-known" x="${x + rBranch + 10}" y="${yBranch + 5}" text-anchor="start">${escapeXml(shortNodeName(node.name))}</text>`;
     const recovery = (model.edges || []).find((edge) => edge.src === node.id && edge.kind === "recovery");
     if (recovery && xOf[recovery.dst] != null) {
-      markup += `<path class="branch-known edge-recovery" d="M ${x + rBranch} ${yBranch} Q ${(x + xOf[recovery.dst]) / 2} ${yBranch}, ${xOf[recovery.dst]} ${yMain + rMain + 4}"/>`;
+      markup += `<path class="branch-known edge-recovery" d="M ${x + rBranch} ${yBranch - 6} Q ${(x + xOf[recovery.dst]) / 2} ${yBranch - 10}, ${xOf[recovery.dst]} ${yMain + rMain + 4}"/>`;
     }
   }
 
   // live novel branch (red)
   if (analysis?.status === "novel" && divergeFrom) {
     const srcX = xOf[divergeFrom.id];
-    const x = srcX + 130;
-    markup += `<path class="branch-novel pulse" d="M ${srcX + 8} ${yMain + rMain - 4} Q ${srcX + 30} ${yBranch}, ${x - rBranch - 4} ${yBranch}"/>`;
+    const x = srcX + 150;
+    markup += `<path class="branch-novel pulse" d="${branchStart(srcX)}${x - rBranch - 4} ${yBranch}"/>`;
     markup += `<circle class="branch-novel pulse" cx="${x}" cy="${yBranch}" r="${rBranch}"/>`;
-    markup += `<text class="node-label branch-novel" x="${x}" y="${yBranch + rBranch + 20}">${escapeXml(analysis.observed?.to || "Novel state")}</text>`;
+    markup += `<text class="node-label branch-novel" x="${x + rBranch + 10}" y="${yBranch + 5}" text-anchor="start">${escapeXml(analysis.observed?.to || "Novel state")}</text>`;
   }
 
-  // nominal nodes
+  // nominal nodes (labels above the circles, clear of branch paths)
   for (const node of nominal) {
     const x = xOf[node.id];
     const active = node.id === activeId;
-    markup += `<g class="node-nominal${active ? " active" : ""}">`;
+    markup += `<g class="node-nominal${active ? " active" : ""}${isNormal ? " traversed" : ""}">`;
     markup += `<circle cx="${x}" cy="${yMain}" r="${rMain}"${active ? ' class="pulse"' : ""}/>`;
-    markup += `<text class="node-label" x="${x}" y="${yMain + rMain + 24}">${escapeXml(shortNodeName(node.name))}</text>`;
+    markup += `<text class="node-label" x="${x}" y="${yMain - rMain - 12}">${escapeXml(shortNodeName(node.name))}</text>`;
     markup += `</g>`;
   }
 
@@ -346,9 +358,14 @@ function renderTimeline(analysis) {
   if (!analysis || analysis.first_divergence_s == null) return;
   const video = $("video");
   const duration = video.duration || 8;
+  const position = `${(analysis.first_divergence_s / duration) * 100}%`;
   const mark = document.createElement("i");
-  mark.style.left = `${(analysis.first_divergence_s / duration) * 100}%`;
-  bar.append(mark);
+  mark.style.left = position;
+  const tickLabel = document.createElement("span");
+  tickLabel.className = "tick-label";
+  tickLabel.style.left = position;
+  tickLabel.textContent = `${Number(analysis.first_divergence_s).toFixed(3)}s`;
+  bar.append(mark, tickLabel);
   bar.onclick = (event) => {
     const rect = bar.getBoundingClientRect();
     video.currentTime = ((event.clientX - rect.left) / rect.width) * (video.duration || duration);
@@ -378,8 +395,12 @@ function drawOverlay() {
     const y = (obj.cy - obj.h / 2) * canvas.height;
     ctx.strokeStyle = colors[obj.label] || "#fff";
     ctx.strokeRect(x, y, obj.w * canvas.width, obj.h * canvas.height);
+    const labelWidth = ctx.measureText(obj.label).width;
+    const baseline = Math.max(12, y - 4);
+    ctx.fillStyle = "rgba(6, 8, 11, 0.85)";
+    ctx.fillRect(x, baseline - 11, labelWidth + 8, 15);
     ctx.fillStyle = ctx.strokeStyle;
-    ctx.fillText(obj.label, x + 2, Math.max(12, y - 4));
+    ctx.fillText(obj.label, x + 4, baseline);
   }
   ctx.globalAlpha = 1;
 }
@@ -445,22 +466,27 @@ function humanizeHit(hit) {
   const snippet = hit.snippet || "";
   const lower = snippet.toLowerCase();
   const diverge = snippet.match(/anomaly at ([\d.]+)s/);
-  let title;
+  let finding;
+  let isNormal = false;
   const subs = [];
   if (lower.includes("normal run")) {
-    title = "Normal run · placed on target";
+    finding = "Placed on target";
+    isNormal = true;
   } else if (lower.includes("displaced") || /displaced/.test(String(hit.kind || ""))) {
-    title = "Displaced after alignment";
+    finding = "Displaced after alignment";
   } else if (lower.includes("failed grasp") || lower.includes("novel transition") || String(hit.kind || "").startsWith("miss")) {
-    title = "Failed grasp";
+    finding = "Failed grasp";
   } else if (hit.next_state) {
-    title = `Reference run · next ${hit.next_state}`;
+    finding = `Next ${hit.next_state}`;
   } else {
-    title = titleCase(hit.kind || hit.role || "Run");
+    finding = titleCase(hit.kind || hit.role || "Run");
   }
-  if (diverge) subs.push(`${Number(diverge[1]).toFixed(2)}s divergence`);
-  if (title === "Failed grasp" && lower.includes("displaced")) subs.push("Displaced after alignment");
-  else if (title === "Failed grasp" && lower.includes("cube moved unexpectedly")) subs.push("Cube moved unexpectedly");
+  const episode = state.episodes.find((ep) => ep.id === hit.id);
+  const title = episode ? `${runLabel(episode)} — ${finding}` : finding;
+  if (isNormal) subs.push("Matches learned process");
+  if (diverge) subs.push(`${Number(diverge[1]).toFixed(3)}s divergence`);
+  if (finding === "Failed grasp" && lower.includes("displaced")) subs.push("Displaced after alignment");
+  else if (finding === "Failed grasp" && lower.includes("cube moved unexpectedly")) subs.push("Cube moved unexpectedly");
   return { title, sub: subs.join(" · ") };
 }
 
@@ -558,6 +584,87 @@ $("file-input").addEventListener("change", async (event) => {
   state.episodes = await api("/api/episodes");
   renderRunSelect();
   await selectEpisode(payload.episode.id);
+});
+
+/* ---------- 3D digital twin view ---------- */
+
+const twinState = { instance: null, loadedRun: null, raf: 0, view: "camera" };
+
+async function ensureTwin() {
+  if (twinState.instance) return twinState.instance;
+  // Lazy: the twin module (and its vendored three.js + GLBs) is only fetched
+  // the first time the 3D DIGITAL TWIN toggle is clicked.
+  const mod = await import("/static/twin/twin.js");
+  twinState.instance = mod.mountTwin($("twin-mount"), {
+    assetsBase: "/static/twin/assets",
+    dataBase: "/static/twin/data",
+  });
+  window.__twin = twinState.instance;
+  return twinState.instance;
+}
+
+async function syncTwinRun() {
+  const twin = twinState.instance;
+  if (!twin || !state.current) return;
+  if (twinState.loadedRun !== state.current) {
+    twinState.loadedRun = state.current;
+    // Runs without twin data show the module's own "twin data unavailable" note.
+    await twin.load(state.current);
+    twin.setAnalysis(state.analysis);
+    // Re-apply the default perspective after load so the whole arm is framed.
+    twin.resetView();
+    twin.setTime($("video").currentTime || 0);
+  } else {
+    twin.setAnalysis(state.analysis);
+  }
+}
+
+function startTwinClock() {
+  cancelAnimationFrame(twinState.raf);
+  const video = $("video");
+  const step = () => {
+    if (twinState.view !== "twin") return;
+    if (twinState.instance) twinState.instance.setTime(video.currentTime || 0);
+    twinState.raf = requestAnimationFrame(step);
+  };
+  twinState.raf = requestAnimationFrame(step);
+}
+
+async function setView(view) {
+  twinState.view = view;
+  const zone = document.querySelector(".video-zone");
+  zone.dataset.mode = view;
+  document.querySelectorAll("#view-toggle button").forEach((btn) => {
+    const active = btn.dataset.view === view;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-pressed", String(active));
+  });
+  const mount = $("twin-mount");
+  const provenance = $("twin-provenance");
+  if (view === "twin") {
+    mount.classList.remove("hidden");
+    try {
+      await ensureTwin();
+      await syncTwinRun();
+      startTwinClock();
+      // The hidden video is the twin's clock — keep it running.
+      $("video").play().catch(() => {});
+      provenance.classList.add("hidden");
+    } catch (error) {
+      provenance.textContent = "3D twin failed to load — switch back to CAMERA.";
+      provenance.classList.remove("hidden");
+    }
+  } else {
+    // Fully restore the camera view; the hidden video kept playing all along.
+    cancelAnimationFrame(twinState.raf);
+    mount.classList.add("hidden");
+    provenance.classList.add("hidden");
+    drawOverlay();
+  }
+}
+
+document.querySelectorAll("#view-toggle button").forEach((btn) => {
+  btn.addEventListener("click", () => setView(btn.dataset.view));
 });
 
 boot().catch((error) => {

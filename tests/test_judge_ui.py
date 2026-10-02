@@ -7,7 +7,7 @@ from urllib import request
 from playwright.sync_api import sync_playwright
 
 
-BASE_URL = "http://127.0.0.1:8100"
+BASE_URL = "http://127.0.0.1:8101"
 SHOTS_DIR = Path("/tmp/judge-shots")
 
 
@@ -129,6 +129,34 @@ def _assert_video_ready_and_playable(page) -> None:
     assert playable, "video failed to reach a playable state"
 
 
+def _assert_video_visible_and_tall(page, min_height: float = 450.0) -> None:
+    metrics = page.evaluate(
+        """
+        () => {
+          const v = document.querySelector("#video");
+          if (!v) return { ok: false, reason: "missing video" };
+          const r = v.getBoundingClientRect();
+          const cs = getComputedStyle(v);
+          return {
+            ok: true,
+            width: r.width,
+            height: r.height,
+            display: cs.display,
+            visibility: cs.visibility,
+            opacity: cs.opacity,
+          };
+        }
+        """
+    )
+    assert metrics["ok"], f"video metrics unavailable: {metrics}"
+    assert metrics["display"] != "none", f"video should be displayed, got {metrics}"
+    assert metrics["visibility"] != "hidden", f"video should be visible, got {metrics}"
+    assert float(metrics["opacity"]) > 0.0, f"video should not be transparent, got {metrics}"
+    assert metrics["height"] >= min_height, (
+        f"video rendered height should be >= {min_height}px at 1440x900, got {metrics['height']:.1f}px"
+    )
+
+
 def _assert_human_text(title: str) -> None:
     assert title and title.strip(), "result title should not be empty"
     canonical = title.strip().lower()
@@ -173,6 +201,7 @@ def test_judge_mode_e2e():
 
             _set_run(page, "normal_16", "normal", timeout_ms=60_000)
             _assert_video_ready_and_playable(page)
+            _assert_video_visible_and_tall(page, min_height=450.0)
             page.wait_for_function(
                 """
                 () => {
@@ -236,18 +265,31 @@ def test_judge_mode_e2e():
             assert page.locator("#graph .branch-known").count() > 0, "missing blue remembered branch"
             _shot(page, "05-known-after-remember.png")
 
-            with page.expect_response(
-                lambda res: "/api/upload" in res.url and res.request.method == "POST" and res.ok,
-                timeout=90_000,
-            ) as upload_response:
-                page.click("#upload-similar-btn")
-            upload_payload = upload_response.value.json()
-            uploaded_id = upload_payload["episode"]["id"]
-            _wait_for_status(page, "known_failure", timeout_ms=90_000)
+            prior_run = page.input_value("#run-select")
+            page.click("#upload-similar-btn")
             page.wait_for_function(
-                "(runId) => document.querySelector('#run-select')?.value === runId",
-                arg=uploaded_id,
-                timeout=30_000,
+                """
+                ({ prev }) => {
+                  const sel = document.querySelector("#run-select");
+                  const btn = document.querySelector("#upload-similar-btn");
+                  const statusNodes = ["#status-word", "#status-badge"];
+                  let known = false;
+                  for (const node of statusNodes) {
+                    const el = document.querySelector(node);
+                    if (!el) continue;
+                    const dataStatus = (el.getAttribute("data-status") || "").toLowerCase();
+                    const text = (el.textContent || "").toUpperCase();
+                    if (dataStatus === "known_failure" || text.includes("KNOWN FAILURE")) {
+                      known = true;
+                    }
+                  }
+                  const uploadSelected = !!(sel && sel.value && sel.value !== prev && sel.value.startsWith("upload_"));
+                  const uploadDone = !!(btn && !btn.disabled);
+                  return uploadSelected && known && uploadDone;
+                }
+                """,
+                arg={"prev": prior_run},
+                timeout=90_000,
             )
             _shot(page, "06-upload-similar-known.png")
 

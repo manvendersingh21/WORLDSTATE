@@ -60,16 +60,14 @@ button:disabled { opacity: 0.45; cursor: default; }
   margin: 0;
   color: var(--muted);
   font-size: 0.85rem;
+  line-height: 1.3;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .top-right { display: flex; align-items: center; gap: 1rem; white-space: nowrap; }
 .status-row { display: flex; align-items: center; gap: 1rem; }
 .sys {
   color: var(--faint);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.16em;
   display: inline-flex;
@@ -88,7 +86,7 @@ button:disabled { opacity: 0.45; cursor: default; }
   border-radius: 4px;
   padding: 0.3rem 0.6rem;
   color: var(--cyan);
-  font-size: 0.7rem;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   font-variant-numeric: tabular-nums;
@@ -111,7 +109,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 }
 .panel-title {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.2em;
   color: var(--muted);
@@ -136,7 +134,7 @@ button:disabled { opacity: 0.45; cursor: default; }
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.16em;
   color: var(--muted);
@@ -155,7 +153,7 @@ button:disabled { opacity: 0.45; cursor: default; }
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   color: var(--muted);
   cursor: pointer;
 }
@@ -166,7 +164,7 @@ button:disabled { opacity: 0.45; cursor: default; }
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 0.35rem 0.7rem;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 .stage-actions button:hover, .file-btn:hover { border-color: var(--cyan); color: var(--ink); }
@@ -176,7 +174,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .video-zone {
   position: relative;
   flex: 1;
-  min-height: 430px;
+  min-height: min(500px, 56vh);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -186,7 +184,7 @@ button:disabled { opacity: 0.45; cursor: default; }
   overflow: hidden;
 }
 .player { position: relative; display: inline-block; max-width: 100%; }
-#video { display: block; max-width: 100%; max-height: 470px; background: #06080B; }
+#video { display: block; height: min(500px, 56vh); width: auto; max-width: 100%; background: #06080B; }
 #overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.8; }
 
 #status-badge {
@@ -208,8 +206,8 @@ button:disabled { opacity: 0.45; cursor: default; }
 
 .timeline {
   position: relative;
-  height: 8px;
-  margin-top: 0.55rem;
+  height: 12px;
+  margin-top: 1.3rem;
   background: var(--panel-2);
   border-radius: 99px;
   cursor: pointer;
@@ -218,9 +216,63 @@ button:disabled { opacity: 0.45; cursor: default; }
   position: absolute;
   top: -3px;
   width: 3px;
-  height: 14px;
+  height: 18px;
   background: var(--red);
   border-radius: 2px;
+}
+.timeline .tick-label {
+  position: absolute;
+  top: -17px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--red);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ---------- View toggle + twin ---------- */
+#view-toggle {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(8, 10, 13, 0.82);
+}
+#view-toggle button {
+  background: transparent;
+  border: none;
+  padding: 0.4rem 0.85rem;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+#view-toggle button:hover { color: var(--ink); }
+#view-toggle button.active { background: var(--cyan); color: #04222B; }
+#twin-mount { position: absolute; inset: 0; z-index: 2; }
+/* Inside the judge page the centered view toggle occupies the top edge, so
+   push the twin module's preset bar one row down (module files untouched). */
+#twin-mount .twin-viewbar { top: 52px; }
+.video-zone[data-mode="twin"] .player { visibility: hidden; }
+/* The twin's own HUD (state chip, divergence, presets, provenance) takes over. */
+.video-zone[data-mode="twin"] #status-badge { display: none; }
+#twin-provenance {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  font-size: 12px;
+  color: var(--muted);
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 /* ---------- Event intelligence ---------- */
@@ -242,7 +294,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 #status-word[data-status="novel"] { color: var(--red); }
 #status-word[data-status="known_failure"] { color: var(--blue); }
 #event-headline {
-  font-size: 1.12rem;
+  font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.3;
@@ -259,7 +311,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 .divergence-label {
   margin-top: 0.25rem;
   color: var(--red);
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.26em;
 }
@@ -275,7 +327,7 @@ button:disabled { opacity: 0.45; cursor: default; }
   border-bottom: 1px solid var(--line-soft);
 }
 .field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
-.field-label { color: var(--faint); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.16em; }
+.field-label { color: var(--faint); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.16em; }
 .field-value { font-size: 0.98rem; font-weight: 600; line-height: 1.25; }
 
 #remember-btn {
@@ -306,30 +358,39 @@ button:disabled { opacity: 0.45; cursor: default; }
 }
 
 .cosmos { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.1rem; }
-.cosmos-head { margin: 0; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.2em; color: var(--muted); }
+.cosmos-head { margin: 0; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.2em; color: var(--muted); }
 #cosmos-text { margin: 0; font-size: 1rem; line-height: 1.55; color: #D7DEE7; }
+#cosmos-text.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .cosmos-foot { display: flex; align-items: center; gap: 0.8rem; }
 .link {
   background: none;
   border: none;
   padding: 0;
   color: var(--cyan);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 .link:hover { text-decoration: underline; }
-#cosmos-attribution { color: var(--faint); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+#cosmos-attribution { color: var(--faint); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
 #cosmos-attribution.cosmos { color: var(--cyan); }
 
 /* ---------- State graph ---------- */
 .graph-panel { padding: 0.8rem 1.1rem 0.5rem; }
 .graph-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.3rem; }
 #graph-meta { color: var(--faint); font-size: 0.75rem; }
-#graph { width: 100%; height: 200px; display: block; }
+#graph { width: 100%; height: auto; display: block; }
 
-#graph .edge-nominal { stroke: var(--amber); stroke-width: 3; fill: none; }
-#graph .node-nominal circle { fill: #141A14; stroke: var(--amber-bright); stroke-width: 2.5; }
-#graph .node-label { fill: #C9D2DD; font-size: 15px; font-weight: 600; text-anchor: middle; font-family: Inter, sans-serif; }
+#graph .edge-nominal { stroke: #2A3646; stroke-width: 3; fill: none; }
+#graph .edge-nominal.traversed { stroke: var(--green); }
+#graph .node-nominal circle { fill: var(--panel); stroke: #5B6676; stroke-width: 2.5; }
+#graph .node-nominal.traversed circle { stroke: var(--green); }
+#graph .node-nominal.active circle { stroke: var(--cyan); fill: #0A1E26; }
+#graph .node-label { fill: #C9D2DD; font-size: 17px; font-weight: 600; text-anchor: middle; font-family: Inter, sans-serif; }
 #graph .branch-novel { stroke: var(--red); fill: none; stroke-width: 3; }
 #graph circle.branch-novel { fill: #2A0F10; stroke: var(--red); }
 #graph text.branch-novel { fill: #FF9B9B; stroke: none; }
@@ -368,7 +429,7 @@ button:disabled { opacity: 0.45; cursor: default; }
   border: 1px solid var(--line);
   border-radius: 99px;
   padding: 0.3rem 0.8rem;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 .search-chip:hover { border-color: var(--cyan); color: var(--ink); }

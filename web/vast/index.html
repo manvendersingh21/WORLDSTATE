@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VAST Corpus</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="vast.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <h1>VAST CORPUS <span class="dash">—</span> <span class="cam">Warehouse cam (sdg_warehouse_cam-2)</span></h1>
+    <a class="back" href="/">← Robot cell demo</a>
+  </div>
+  <p class="sub">Real footage and pipeline outputs from our team's VAST VSS index: Cosmos Reason captions + YOLO11 detections, searched with WORLDSTATE memory.</p>
+</header>
+
+<main class="wrap">
+  <section class="search">
+    <label for="q" class="search-label">Search the VAST corpus</label>
+    <div class="search-row">
+      <input id="q" type="search" placeholder="e.g. forklift near a person" autocomplete="off">
+      <button id="clear" type="button" class="btn-ghost">Clear</button>
+    </div>
+    <div class="chips" id="chips">
+      <button type="button" class="chip" data-q="forklift near a person">forklift near a person</button>
+      <button type="button" class="chip" data-q="pallet in the aisle">pallet in the aisle</button>
+      <button type="button" class="chip" data-q="empty aisle">empty aisle</button>
+      <button type="button" class="chip" data-q="person walking">person walking</button>
+    </div>
+    <p class="note">Client-side keyword ranking over VAST's Cosmos captions (stemmed term overlap). <span id="meta"></span></p>
+  </section>
+
+  <section id="empty" class="empty hidden">
+    <h2>VAST export not loaded yet</h2>
+    <p>Waiting for <code>manifest.json</code> from the VAST VSS export. Once it is in place, clips, Cosmos Reason captions and YOLO11 detections appear here.</p>
+  </section>
+
+  <section id="grid" class="grid" aria-live="polite"></section>
+</main>
+
+<div id="detail" class="detail hidden" role="dialog" aria-modal="true" aria-label="Clip detail">
+  <div class="detail-card">
+    <button type="button" class="detail-close" id="detail-close" aria-label="Close">×</button>
+    <div id="detail-body"></div>
+  </div>
+</div>
+
+<script src="vast.js"></script>
+</body>
+</html>

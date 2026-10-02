@@ -47,12 +47,18 @@
             </label>
           </div>
         </div>
-        <div class="video-zone">
+        <div class="video-zone" data-mode="camera">
           <div id="status-badge" data-status="none"></div>
+          <div id="view-toggle" role="group" aria-label="View">
+            <button type="button" data-view="camera" class="active" aria-pressed="true">CAMERA</button>
+            <button type="button" data-view="twin" aria-pressed="false">3D DIGITAL TWIN</button>
+          </div>
           <div class="player">
             <video id="video" playsinline controls preload="metadata"></video>
             <canvas id="overlay"></canvas>
           </div>
+          <div id="twin-mount" class="hidden"></div>
+          <div id="twin-provenance" class="hidden"></div>
         </div>
         <div id="timeline" class="timeline" title="Divergence point"></div>
       </div>
@@ -98,7 +104,7 @@
         <h2 class="panel-title">STATE GRAPH</h2>
         <span id="graph-meta"></span>
       </div>
-      <svg id="graph" data-branch="none" viewBox="0 0 1360 250" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Learned state graph"></svg>
+      <svg id="graph" data-branch="none" viewBox="0 0 1360 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Learned state graph"></svg>
     </section>
 
     <section class="panel search-panel">
