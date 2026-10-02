@@ -1,0 +1,86 @@
+{
+  "url": "http://127.0.0.1:8000",
+  "output": "/Users/manubaba/Documents/WORLDSTATE/docs/demo/worldstate-demo.mp4",
+  "shots_dir": "/Users/manubaba/Documents/WORLDSTATE/docs/demo/shots",
+  "raw_duration_s": 87.203,
+  "final_duration_s": 60.56,
+  "idle_waits": [
+    {
+      "label": "wait_upload_known",
+      "start_s": 43.37,
+      "end_s": 62.928,
+      "duration_s": 19.559
+    },
+    {
+      "label": "wait_upload_cosmos",
+      "start_s": 62.93,
+      "end_s": 77.645,
+      "duration_s": 14.715
+    }
+  ],
+  "step_timestamps_s": {
+    "page_ready": 1.495,
+    "normal_complete": 7.757,
+    "novel_complete": 16.142,
+    "remember_complete": 25.151,
+    "fix_complete": 37.722,
+    "next_known_complete": 43.337,
+    "upload_complete": 79.922,
+    "search_complete": 84.482,
+    "capture_end": 86.886
+  },
+  "wait_durations_s": {
+    "wait_normal_status": 0.025,
+    "wait_normal_cosmos": 0.017,
+    "wait_novel_status": 0.033,
+    "wait_novel_cosmos": 0.003,
+    "wait_remember_known": 0.067,
+    "wait_fix_confirm": 2.299,
+    "wait_next_known": 0.035,
+    "wait_upload_known": 19.559,
+    "wait_upload_cosmos": 14.715,
+    "wait_search_results": 0.035
+  },
+  "segments": [
+    {
+      "start_s": 0.0,
+      "end_s": 43.37,
+      "speed": 1.0
+    },
+    {
+      "start_s": 43.37,
+      "end_s": 45.37,
+      "speed": 1.0
+    },
+    {
+      "start_s": 45.37,
+      "end_s": 62.928,
+      "speed": 8.779
+    },
+    {
+      "start_s": 62.93,
+      "end_s": 64.93,
+      "speed": 1.0
+    },
+    {
+      "start_s": 64.93,
+      "end_s": 77.645,
+      "speed": 6.357
+    },
+    {
+      "start_s": 77.645,
+      "end_s": 87.203,
+      "speed": 1.0
+    }
+  ],
+  "shots": [
+    "01-normal.png",
+    "02-novel.png",
+    "03-cosmos.png",
+    "04-remember-known.png",
+    "05-next-known.png",
+    "06-upload-known.png",
+    "07-search.png",
+    "08-twin.png"
+  ]
+}
