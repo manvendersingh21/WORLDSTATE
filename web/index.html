@@ -3,81 +3,142 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WORLDSTATE</title>
+  <title>WORLDSTATE — Physical Process Intelligence</title>
+  <link rel="icon" href="data:," />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Outfit:wght@360;500;600&display=swap" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
   <header class="top">
     <div class="brand">
-      <p class="kicker">Unsupervised process model</p>
-      <h1>Worldstate</h1>
+      <h1>WORLDSTATE</h1>
+      <span class="brand-sub">Physical Process Intelligence</span>
     </div>
-    <p id="dataset-note" class="note"></p>
-    <div class="top-actions">
-      <span id="version" class="chip">world model</span>
-      <button id="learn-btn" type="button">Learn process</button>
+    <p class="tagline">Learns how a physical process should behave — and detects when reality diverges.</p>
+    <div class="top-right">
+      <div class="status-row" id="status-row">
+        <span class="sys" id="sys-live"><i class="dot"></i>LIVE</span>
+        <span class="sys" id="sys-yolo">YOLO</span>
+        <span class="sys" id="sys-cosmos">COSMOS</span>
+        <span class="sys" id="sys-memory">WORLD MEMORY</span>
+      </div>
+      <span id="version-chip" class="chip">WORLD MODEL</span>
     </div>
   </header>
-  <div class="shell">
-    <aside class="rail">
-      <h2>Runs</h2>
-      <div id="episode-list"></div>
-      <label class="upload">
-        Upload a clip
-        <input id="file-input" type="file" accept="video/mp4,video/quicktime" />
-      </label>
-    </aside>
-    <main>
-      <section class="stage">
-        <div id="alert" class="alert hidden"></div>
-        <div class="player">
-          <video id="player" playsinline controls preload="metadata"></video>
-          <canvas id="overlay"></canvas>
+
+  <main class="judge">
+    <section class="hero">
+      <div class="panel hero-left">
+        <div class="stage-bar">
+          <label class="run-label">RUN
+            <select id="run-select" aria-label="Select run"></select>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="tracking-toggle" checked />
+            Tracking
+          </label>
+          <div class="stage-actions">
+            <button id="upload-similar-btn" type="button">Upload similar run</button>
+            <label class="file-btn">
+              Upload file
+              <input id="file-input" type="file" accept="video/mp4,video/quicktime" />
+            </label>
+          </div>
         </div>
-        <div id="timeline" class="timeline"></div>
-        <div id="sequence" class="sequence"></div>
-      </section>
-      <section class="graph-wrap">
-        <div class="graph-head">
-          <h2>State graph</h2>
-          <p id="graph-meta"></p>
+        <div class="video-zone">
+          <div id="status-badge" data-status="none"></div>
+          <div class="player">
+            <video id="video" playsinline controls preload="metadata"></video>
+            <canvas id="overlay"></canvas>
+          </div>
         </div>
-        <svg id="graph" viewBox="0 0 980 210" role="img" aria-label="Learned state graph"></svg>
-      </section>
-    </main>
-    <aside class="insight">
-      <h2>This run</h2>
-      <p id="score-line" class="score">Select a run.</p>
-      <dl id="facts" class="facts"></dl>
-      <h3>Why</h3>
-      <p id="why" class="why">The explanation appears after a run is analyzed.</p>
-      <h3>What happened <span id="narration-source" class="source"></span></h3>
-      <p id="narration" class="why"></p>
-      <h3>What should have happened</h3>
-      <p id="expected-path" class="path"></p>
-      <h3>Recovery</h3>
-      <p id="recovery-path" class="path"></p>
-      <p id="video-stub" class="stub"></p>
-      <div class="ask">
-        <input id="search-q" type="search" placeholder="Ask memory: show me failed grasps" />
-        <div class="chips">
-          <button type="button" data-q="show me failed grasps">failed grasps</button>
-          <button type="button" data-q="when did the cube move unexpectedly">cube moved unexpectedly</button>
-          <button type="button" data-q="what unusual things happened">unusual runs</button>
-          <button type="button" data-q="normal run placed on the target">normal runs</button>
+        <div id="timeline" class="timeline" title="Divergence point"></div>
+      </div>
+
+      <aside class="panel hero-right" id="event-intel">
+        <h2 class="panel-title">EVENT INTELLIGENCE</h2>
+        <div id="status-word" data-status="none"></div>
+        <div id="event-headline"></div>
+        <div id="divergence-block" class="divergence hidden">
+          <div id="divergence-time"></div>
+          <div class="divergence-label">REALITY DIVERGED</div>
+        </div>
+        <p id="normal-score" class="normal-score hidden"></p>
+        <div class="fields">
+          <div class="field">
+            <span class="field-label">EXPECTED</span>
+            <span id="field-expected" class="field-value"></span>
+          </div>
+          <div class="field">
+            <span class="field-label">OBSERVED</span>
+            <span id="field-observed" class="field-value"></span>
+          </div>
+          <div class="field">
+            <span class="field-label">PRIOR SUPPORT</span>
+            <span id="field-support" class="field-value"></span>
+          </div>
+        </div>
+        <button id="remember-btn" type="button" class="hidden">Remember this failure</button>
+        <div id="remember-confirm" class="hidden">✓ Failure pattern added to world memory</div>
+        <div class="cosmos">
+          <h3 class="cosmos-head">COSMOS REASONING</h3>
+          <p id="cosmos-text"></p>
+          <div class="cosmos-foot">
+            <button id="cosmos-expand" type="button" class="link hidden">Show full</button>
+            <span id="cosmos-attribution"></span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel graph-panel">
+      <div class="graph-head">
+        <h2 class="panel-title">STATE GRAPH</h2>
+        <span id="graph-meta"></span>
+      </div>
+      <svg id="graph" data-branch="none" viewBox="0 0 1360 250" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Learned state graph"></svg>
+    </section>
+
+    <section class="panel search-panel">
+      <h2 class="panel-title">SEARCH WORLD MEMORY</h2>
+      <div class="search-bar">
+        <input id="search-input" type="search" placeholder="Ask memory: show me failed grasps" />
+        <button id="search-btn" type="button">Search</button>
+      </div>
+      <div class="search-chips">
+        <button type="button" class="search-chip" data-q="show me failed grasps">failed grasps</button>
+        <button type="button" class="search-chip" data-q="when did the cube move unexpectedly">cube moved unexpectedly</button>
+        <button type="button" class="search-chip" data-q="what unusual things happened">unusual runs</button>
+        <button type="button" class="search-chip" data-q="normal run placed on the target">normal runs</button>
+      </div>
+      <div id="search-results"></div>
+    </section>
+
+    <details id="details-drawer" class="panel drawer">
+      <summary>Details</summary>
+      <div class="drawer-grid">
+        <div>
+          <h3>Why</h3>
+          <p id="drawer-why"></p>
+        </div>
+        <div>
+          <h3>Expected path</h3>
+          <p id="drawer-expected-path"></p>
+          <h3>Recovery</h3>
+          <p id="drawer-recovery-path"></p>
+        </div>
+        <div>
+          <h3>Scores</h3>
+          <p id="drawer-scores"></p>
+          <h3>Internal</h3>
+          <p id="drawer-internal"></p>
+          <p id="drawer-adapters"></p>
         </div>
       </div>
-      <div class="row">
-        <button id="search-btn" type="button" disabled>Search memory</button>
-        <button id="remember-btn" type="button" disabled>Remember this failure</button>
-      </div>
-      <div id="search-results" class="results"></div>
-      <button id="upload-similar-btn" type="button">Upload similar run</button>
-      <p id="adapters" class="adapters"></p>
-    </aside>
-  </div>
+    </details>
+  </main>
   <script src="/static/app.js"></script>
 </body>
 </html>
